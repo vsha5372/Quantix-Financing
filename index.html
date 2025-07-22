@@ -45,7 +45,6 @@
         .kpi-card .value { font-size: 2.2rem; font-weight: 800; }
         .kpi-card .value.green { color: var(--accent-green); }
         .kpi-card .value.blue { color: var(--accent-blue); }
-        .strategy-grid { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
         .data-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
         .data-table th, .data-table td { padding: 0.75rem; text-align: right; border-bottom: 1px solid var(--border-color); font-size: 0.9rem;}
         .data-table th { color: var(--text-secondary); font-size: 0.8rem; }
@@ -118,15 +117,50 @@
 
         @media (min-width: 992px) {
             .kpi-card { grid-column: span 3; }
-            .strategy-grid, .pro-assumption-grid, .iq-assumption-grid { grid-template-columns: repeat(2, 1fr); }
+            .pro-assumption-grid, .iq-assumption-grid { grid-template-columns: repeat(2, 1fr); }
             .chart-card-aum { grid-column: span 5; }
             .chart-card-revenue { grid-column: span 7; }
         }
         
         @media (min-width: 1200px) {
             h1 { font-size: 3rem; }
-            .strategy-grid { grid-template-columns: repeat(3, 1fr); }
             .iq-assumption-grid > .card, .pro-assumption-grid > .card { grid-column: span 1; }
+        }
+
+        /* FIX: Added responsive table styles */
+        @media (max-width: 768px) {
+            .responsive-table thead {
+                display: none;
+            }
+            .responsive-table tr {
+                display: block;
+                margin-bottom: 1rem;
+                border: 1px solid var(--border-color);
+                border-radius: 8px;
+                overflow: hidden;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .responsive-table td {
+                display: block;
+                text-align: right;
+                padding-left: 50%;
+                position: relative;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .responsive-table tr:last-child td:last-child {
+                border-bottom: none;
+            }
+            .responsive-table td::before {
+                content: attr(data-label);
+                position: absolute;
+                left: 0.75rem;
+                width: 45%;
+                padding-right: 0.75rem;
+                white-space: nowrap;
+                text-align: left;
+                font-weight: bold;
+                color: var(--text-primary);
+            }
         }
     </style>
 </head>
@@ -172,7 +206,7 @@
                 <h2>5 year Financial Plan</h2>
                 <div class="card">
                     <div class="table-container">
-                        <table class="summary-table" id="summary-income-statement"></table>
+                        <table class="summary-table responsive-table" id="summary-income-statement"></table>
                     </div>
                 </div>
             </section>
@@ -242,6 +276,7 @@
                         <div class="card kpi-card"><h3>Break-Even Year</h3><p class="value" id="kpi-breakeven"></p></div>
                     </div>
                 </section>
+                <!-- FIX: Restructured strategy section for better layout -->
                 <section id="strategy">
                     <h2 id="strategy-title">Go-To-Market Strategy</h2>
                     <div class="dashboard-grid">
@@ -249,54 +284,61 @@
                             <h3>The Bot-Centric GTM Model</h3>
                             <p style="color:var(--text-secondary); margin:0;">Our growth is driven by deploying 40 high-performance bots on each partner platform. User acquisition is fueled by influencer marketing and a strong reputation on these marketplaces. This model includes a critical **3-month incubation period** for each new partnership, where costs are incurred but revenue generation is delayed, ensuring a realistic cash flow projection.</p>
                         </div>
-                        <div class="card strategy-grid" style="grid-column: span 12;">
-                            <div>
-                                <h3>Deployment Plan</h3>
-                                <div class="table-container"><table class="data-table" style="display:table;">
+                        
+                        <div class="card" style="grid-column: span 12; @media (min-width: 992px) { grid-column: span 6; }">
+                            <h3>Deployment Plan</h3>
+                            <div class="table-container">
+                                <table class="data-table responsive-table" style="display:table;">
                                     <thead><tr><th>Quarter</th><th>New Partners Added</th><th>Total Partners</th><th>Total Active Bots</th></tr></thead>
                                     <tbody id="deployment-table-body"></tbody>
-                                </table></div>
+                                </table>
                             </div>
-                            <div id="growth-engine-card">
-                                <h3>User Growth Engine</h3>
-                                <div class="table-container"><table class="data-table" style="display:table;">
+                        </div>
+                        
+                        <div class="card" style="grid-column: span 12; @media (min-width: 992px) { grid-column: span 6; }">
+                            <h3>User Growth Engine</h3>
+                            <div class="table-container">
+                                <table class="data-table responsive-table" style="display:table;">
                                     <thead><tr><th>Year</th><th>Avg. Copiers / Bot (EOY)</th></tr></thead>
                                     <tbody id="copier-growth-table-body"></tbody>
-                                </table></div>
-                                
-                                <div class="growth-controls" id="s-curve-controls" style="margin-top: 1.5rem;">
-                                    <h4 style="margin-top:0; color:var(--text-secondary); font-weight:600;">S-Curve Model Parameters</h4>
-                                    <div class="table-container">
-                                        <table class="data-table" style="display:table; margin-top:0;">
-                                            <thead><tr><th>Year</th><th>MoM Growth (%)</th><th>MoM Churn (%)</th></tr></thead>
-                                            <tbody>
-                                                <tr><td>Year 1</td><td><input type="number" id="g-y1" step="0.5"></td><td><input type="number" id="c-y1" step="0.5"></td></tr>
-                                                <tr><td>Year 2</td><td><input type="number" id="g-y2" step="0.5"></td><td><input type="number" id="c-y2" step="0.5"></td></tr>
-                                                <tr><td>Year 3</td><td><input type="number" id="g-y3" step="0.5"></td><td><input type="number" id="c-y3" step="0.5"></td></tr>
-                                                <tr><td>Year 4</td><td><input type="number" id="g-y4" step="0.5"></td><td><input type="number" id="c-y4" step="0.5"></td></tr>
-                                                <tr><td>Year 5</td><td><input type="number" id="g-y5" step="0.5"></td><td><input type="number" id="c-y5" step="0.5"></td></tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-
-                                <div class="growth-controls" id="linear-model-controls" style="display: none; margin-top: 1.5rem;">
-                                    <h4 style="margin-top:0; color:var(--text-secondary); font-weight:600;">Linear Model Parameters</h4>
-                                    <div>
-                                        <label for="linear-copiers-input" style="display: block; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 600;">New Copiers / Mature Partner / Month</label>
-                                        <input type="number" id="linear-copiers-input" step="1">
-                                    </div>
-                                </div>
-
-                                <button data-action="rerun-gtm-model" class="control-btn" style="background-color: var(--accent-blue); color: #fff; margin-top: 1.5rem; width: 100%;">Update Projections</button>
+                                </table>
                             </div>
-                            <div>
-                                <h3>Key Financial Assumptions</h3>
-                                <div class="table-container"><table class="data-table" style="display:table;">
+                        </div>
+                        
+                        <div class="card" style="grid-column: span 12; @media (min-width: 992px) { grid-column: span 6; }">
+                            <h3>Key Financial Assumptions</h3>
+                            <div class="table-container">
+                                <table class="data-table responsive-table" style="display:table;">
                                     <thead><tr><th>Metric</th><th>Value</th></tr></thead>
                                     <tbody id="financial-assumptions-table-body"></tbody>
-                                </table></div>
+                                </table>
                             </div>
+                        </div>
+
+                        <div class="card" style="grid-column: span 12; @media (min-width: 992px) { grid-column: span 6; }">
+                            <div class="growth-controls" id="s-curve-controls" style="margin-top: 0;">
+                                <h4 style="margin-top:0; color:var(--text-secondary); font-weight:600;">S-Curve Model Parameters</h4>
+                                <div class="table-container">
+                                    <table class="data-table responsive-table" style="display:table; margin-top:0;">
+                                        <thead><tr><th>Year</th><th>MoM Growth (%)</th><th>MoM Churn (%)</th></tr></thead>
+                                        <tbody>
+                                            <tr><td data-label="Year">Year 1</td><td data-label="MoM Growth (%)"><input type="number" id="g-y1" step="0.5"></td><td data-label="MoM Churn (%)"><input type="number" id="c-y1" step="0.5"></td></tr>
+                                            <tr><td data-label="Year">Year 2</td><td data-label="MoM Growth (%)"><input type="number" id="g-y2" step="0.5"></td><td data-label="MoM Churn (%)"><input type="number" id="c-y2" step="0.5"></td></tr>
+                                            <tr><td data-label="Year">Year 3</td><td data-label="MoM Growth (%)"><input type="number" id="g-y3" step="0.5"></td><td data-label="MoM Churn (%)"><input type="number" id="c-y3" step="0.5"></td></tr>
+                                            <tr><td data-label="Year">Year 4</td><td data-label="MoM Growth (%)"><input type="number" id="g-y4" step="0.5"></td><td data-label="MoM Churn (%)"><input type="number" id="c-y4" step="0.5"></td></tr>
+                                            <tr><td data-label="Year">Year 5</td><td data-label="MoM Growth (%)"><input type="number" id="g-y5" step="0.5"></td><td data-label="MoM Churn (%)"><input type="number" id="c-y5" step="0.5"></td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="growth-controls" id="linear-model-controls" style="display: none; margin-top: 1.5rem;">
+                                <h4 style="margin-top:0; color:var(--text-secondary); font-weight:600;">Linear Model Parameters</h4>
+                                <div>
+                                    <label for="linear-copiers-input" style="display: block; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 600;">New Copiers / Mature Partner / Month</label>
+                                    <input type="number" id="linear-copiers-input" step="1">
+                                </div>
+                            </div>
+                            <button data-action="rerun-gtm-model" class="control-btn" style="background-color: var(--accent-blue); color: #fff; margin-top: 1.5rem; width: 100%;">Update Projections</button>
                         </div>
                     </div>
                 </section>
@@ -312,7 +354,7 @@
                     <div class="year-buttons" id="marketplace-year-buttons"></div>
                     <div class="card" style="grid-column: span 12;">
                         <div class="table-container">
-                            <table class="data-table" style="display:table;">
+                            <table class="data-table responsive-table" style="display:table;">
                                 <thead>
                                     <tr>
                                         <th>Month</th>
@@ -345,23 +387,23 @@
                     <div class="card iq-assumption-card">
                         <h3>Growth & Conversion</h3>
                         <div class="table-container">
-                            <table class="data-table" style="display:table; margin-top:0;">
+                            <table class="data-table responsive-table" style="display:table; margin-top:0;">
                                 <thead><tr><th>Metric</th><th>Year 1</th><th>Year 2</th><th>Year 3-5</th></tr></thead>
                                 <tbody>
-                                    <tr><td>New Free Trials / Month</td>
-                                        <td><input type="number" id="iq-trials-y1"></td>
-                                        <td><input type="number" id="iq-trials-y2"></td>
-                                        <td><input type="number" id="iq-trials-y3"></td>
+                                    <tr><td data-label="Metric">New Free Trials / Month</td>
+                                        <td data-label="Year 1"><input type="number" id="iq-trials-y1"></td>
+                                        <td data-label="Year 2"><input type="number" id="iq-trials-y2"></td>
+                                        <td data-label="Year 3-5"><input type="number" id="iq-trials-y3"></td>
                                     </tr>
-                                    <tr><td>Free-to-Paid Conv. Rate (%)</td>
-                                        <td><input type="number" id="iq-conv-y1"></td>
-                                        <td><input type="number" id="iq-conv-y2"></td>
-                                        <td><input type="number" id="iq-conv-y3"></td>
+                                    <tr><td data-label="Metric">Free-to-Paid Conv. Rate (%)</td>
+                                        <td data-label="Year 1"><input type="number" id="iq-conv-y1"></td>
+                                        <td data-label="Year 2"><input type="number" id="iq-conv-y2"></td>
+                                        <td data-label="Year 3-5"><input type="number" id="iq-conv-y3"></td>
                                     </tr>
-                                    <tr><td>Annual Paid Churn Rate (%)</td>
-                                        <td><input type="number" id="iq-churn-y1"></td>
-                                        <td><input type="number" id="iq-churn-y2"></td>
-                                        <td><input type="number" id="iq-churn-y3"></td>
+                                    <tr><td data-label="Metric">Annual Paid Churn Rate (%)</td>
+                                        <td data-label="Year 1"><input type="number" id="iq-churn-y1"></td>
+                                        <td data-label="Year 2"><input type="number" id="iq-churn-y2"></td>
+                                        <td data-label="Year 3-5"><input type="number" id="iq-churn-y3"></td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -370,15 +412,15 @@
                     <div class="card iq-assumption-card">
                         <h3>Acquisition & Plan Uptake</h3>
                         <div class="table-container">
-                            <table class="data-table" style="display:table; margin-top:0;">
+                            <table class="data-table responsive-table" style="display:table; margin-top:0;">
                                 <thead><tr><th>Action</th><th>Cost / Rate</th></tr></thead>
                                 <tbody>
-                                    <tr><td><b>Cost per Free Trial User ($)</b></td>
-                                        <td><input type="number" id="iq-cost-per-trial" style="width: 100px;"></td>
+                                    <tr><td data-label="Action"><b>Cost per Free Trial User ($)</b></td>
+                                        <td data-label="Cost / Rate"><input type="number" id="iq-cost-per-trial" style="width: 100px;"></td>
                                     </tr>
                                     <tr style="background-color:rgba(255,255,255,0.05);">
-                                        <td>Annual Plan Uptake (%)</td>
-                                        <td><input type="number" id="iq-annual-uptake" style="width: 100px;"></td>
+                                        <td data-label="Action">Annual Plan Uptake (%)</td>
+                                        <td data-label="Cost / Rate"><input type="number" id="iq-annual-uptake" style="width: 100px;"></td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -387,15 +429,15 @@
                      <div class="card iq-assumption-card">
                         <!-- FIX: Renamed title from "Subscription & Revenue" to "Subscription" -->
                         <h3>Subscription</h3>
-                         <div class="table-container"><table class="data-table" style="display:table; margin-top:0;"><thead><tr><th>Plan</th><th>Monthly Cost</th><th>Annual Cost (Billed Upfront)</th></tr></thead><tbody><tr><td>Basic</td><td>$42.00</td><td>$360.00 ($30/mo)</td></tr><tr><td>Pro</td><td>$70.00</td><td>$600.00 ($50/mo)</td></tr><tr><td>Elite</td><td>$210.00</td><td>$1,800.00 ($150/mo)</td></tr></tbody></table></div>
+                         <div class="table-container"><table class="data-table responsive-table" style="display:table; margin-top:0;"><thead><tr><th>Plan</th><th>Monthly Cost</th><th>Annual Cost (Billed Upfront)</th></tr></thead><tbody><tr><td data-label="Plan">Basic</td><td data-label="Monthly Cost">$42.00</td><td data-label="Annual Cost">$360.00 ($30/mo)</td></tr><tr><td data-label="Plan">Pro</td><td data-label="Monthly Cost">$70.00</td><td data-label="Annual Cost">$600.00 ($50/mo)</td></tr><tr><td data-label="Plan">Elite</td><td data-label="Monthly Cost">$210.00</td><td data-label="Annual Cost">$1,800.00 ($150/mo)</td></tr></tbody></table></div>
                          <h3 style="margin-top:1.5rem">New Paid User Mix</h3>
-                        <div class="table-container"><table class="data-table" style="display:table; margin-top:0;"><thead><tr><th>Year</th><th>Basic</th><th>Pro</th><th>Elite</th></tr></thead><tbody><tr><td>Year 1-5</td><td>60%</td><td>30%</td><td>10%</td></tr></tbody></table></div>
+                        <div class="table-container"><table class="data-table responsive-table" style="display:table; margin-top:0;"><thead><tr><th>Year</th><th>Basic</th><th>Pro</th><th>Elite</th></tr></thead><tbody><tr><td data-label="Year">Year 1-5</td><td data-label="Basic">60%</td><td data-label="Pro">30%</td><td data-label="Elite">10%</td></tr></tbody></table></div>
                     </div>
                     <div class="card iq-assumption-card">
                         <h3>Infrastructure Costs & Rules</h3>
-                        <div class="table-container"><table class="data-table" style="display:table; margin-top:0;"><thead><tr><th>Item</th><th>Cost/Capacity</th></tr></thead><tbody><tr><td>Shared Server</td><td>$202.40 / month</td></tr><tr><td>Storage Server</td><td>$165.00 / 60 TB</td></tr><tr><td>Bot Server</td><td>$110.00 / 90 Bots</td></tr></tbody></table></div>
+                        <div class="table-container"><table class="data-table responsive-table" style="display:table; margin-top:0;"><thead><tr><th>Item</th><th>Cost/Capacity</th></tr></thead><tbody><tr><td data-label="Item">Shared Server</td><td data-label="Cost/Capacity">$202.40 / month</td></tr><tr><td data-label="Item">Storage Server</td><td data-label="Cost/Capacity">$165.00 / 60 TB</td></tr><tr><td data-label="Item">Bot Server</td><td data-label="Cost/Capacity">$110.00 / 90 Bots</td></tr></tbody></table></div>
                         <h3 style="margin-top:1.5rem;">Server Requirements per User</h3>
-                         <div class="table-container"><table class="data-table" style="display:table; margin-top:0;"><thead><tr><th>Plan</th><th>Users/Shared Srv</th><th>Storage</th><th>Bots</th></tr></thead><tbody><tr><td>Free</td><td>500</td><td>2 GB</td><td>0</td></tr><tr><td>Basic</td><td>200</td><td>10 GB</td><td>1</td></tr><tr><td>Pro</td><td>100</td><td>20 GB</td><td>2</td></tr><tr><td>Elite</td><td>50</td><td>50 GB</td><td>5</td></tr></tbody></table></div>
+                         <div class="table-container"><table class="data-table responsive-table" style="display:table; margin-top:0;"><thead><tr><th>Plan</th><th>Users/Shared Srv</th><th>Storage</th><th>Bots</th></tr></thead><tbody><tr><td data-label="Plan">Free</td><td data-label="Users/Shared Srv">500</td><td data-label="Storage">2 GB</td><td data-label="Bots">0</td></tr><tr><td data-label="Plan">Basic</td><td data-label="Users/Shared Srv">200</td><td data-label="Storage">10 GB</td><td data-label="Bots">1</td></tr><tr><td data-label="Plan">Pro</td><td data-label="Users/Shared Srv">100</td><td data-label="Storage">20 GB</td><td data-label="Bots">2</td></tr><tr><td data-label="Plan">Elite</td><td data-label="Users/Shared Srv">50</td><td data-label="Storage">50 GB</td><td data-label="Bots">5</td></tr></tbody></table></div>
                     </div>
                     <div class="card" style="grid-column: span 12; padding-top: 1rem; padding-bottom: 1rem;">
                          <button data-action="rerun-iq-model" class="control-btn" style="background-color: var(--accent-blue); color: #fff; width: 100%;">Update Projections</button>
@@ -405,7 +447,7 @@
             <section>
                 <h2>2. 5-Year Financial Summary</h2>
                 <div class="card yearly-summary-card"><div class="table-container">
-                    <table class="summary-table" id="iq-yearly-summary"></table>
+                    <table class="summary-table responsive-table" id="iq-yearly-summary"></table>
                 </div></div>
             </section>
              <section>
@@ -431,11 +473,11 @@
                     <div class="card pro-assumption-card">
                         <h3>Pricing & Monetization</h3>
                         <div class="table-container">
-                            <table class="data-table" style="display:table; margin-top:0;">
+                            <table class="data-table responsive-table" style="display:table; margin-top:0;">
                                 <thead><tr><th>Tier</th><th>One-Time NRE Fee ($)</th><th>Annual License Fee ($)</th></tr></thead>
                                 <tbody>
-                                    <tr><td><b>Pro</b> (Small Funds)</td><td><input type="number" id="pro-nre-pro"></td><td><input type="number" id="pro-license-pro"></td></tr>
-                                    <tr><td><b>Enterprise</b> (Institutions)</td><td><input type="number" id="pro-nre-ent"></td><td><input type="number" id="pro-license-ent"></td></tr>
+                                    <tr><td data-label="Tier"><b>Pro</b> (Small Funds)</td><td data-label="One-Time NRE Fee ($)"><input type="number" id="pro-nre-pro"></td><td data-label="Annual License Fee ($)"><input type="number" id="pro-license-pro"></td></tr>
+                                    <tr><td data-label="Tier"><b>Enterprise</b> (Institutions)</td><td data-label="One-Time NRE Fee ($)"><input type="number" id="pro-nre-ent"></td><td data-label="Annual License Fee ($)"><input type="number" id="pro-license-ent"></td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -443,14 +485,14 @@
                     <div class="card pro-assumption-card">
                         <h3>Projected New Contracts Per Year</h3>
                         <div class="table-container">
-                            <table class="data-table" style="display:table; margin-top:0;">
+                            <table class="data-table responsive-table" style="display:table; margin-top:0;">
                                 <thead><tr><th>Year</th><th>New Pro Contracts</th><th>New Enterprise Contracts</th></tr></thead>
                                 <tbody>
-                                    <tr><td>Year 1</td><td><input type="number" id="pro-deals-pro-y1"></td><td><input type="number" id="pro-deals-ent-y1"></td></tr>
-                                    <tr><td>Year 2</td><td><input type="number" id="pro-deals-pro-y2"></td><td><input type="number" id="pro-deals-ent-y2"></td></tr>
-                                    <tr><td>Year 3</td><td><input type="number" id="pro-deals-pro-y3"></td><td><input type="number" id="pro-deals-ent-y3"></td></tr>
-                                    <tr><td>Year 4</td><td><input type="number" id="pro-deals-pro-y4"></td><td><input type="number" id="pro-deals-ent-y4"></td></tr>
-                                    <tr><td>Year 5</td><td><input type="number" id="pro-deals-pro-y5"></td><td><input type="number" id="pro-deals-ent-y5"></td></tr>
+                                    <tr><td data-label="Year">Year 1</td><td data-label="New Pro Contracts"><input type="number" id="pro-deals-pro-y1"></td><td data-label="New Enterprise Contracts"><input type="number" id="pro-deals-ent-y1"></td></tr>
+                                    <tr><td data-label="Year">Year 2</td><td data-label="New Pro Contracts"><input type="number" id="pro-deals-pro-y2"></td><td data-label="New Enterprise Contracts"><input type="number" id="pro-deals-ent-y2"></td></tr>
+                                    <tr><td data-label="Year">Year 3</td><td data-label="New Pro Contracts"><input type="number" id="pro-deals-pro-y3"></td><td data-label="New Enterprise Contracts"><input type="number" id="pro-deals-ent-y3"></td></tr>
+                                    <tr><td data-label="Year">Year 4</td><td data-label="New Pro Contracts"><input type="number" id="pro-deals-pro-y4"></td><td data-label="New Enterprise Contracts"><input type="number" id="pro-deals-ent-y4"></td></tr>
+                                    <tr><td data-label="Year">Year 5</td><td data-label="New Pro Contracts"><input type="number" id="pro-deals-pro-y5"></td><td data-label="New Enterprise Contracts"><input type="number" id="pro-deals-ent-y5"></td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -458,13 +500,13 @@
                      <div class="card pro-assumption-card">
                         <h3>Affiliate Program Assumptions</h3>
                         <div class="table-container">
-                             <table class="data-table" style="display:table; margin-top:0;">
+                             <table class="data-table responsive-table" style="display:table; margin-top:0;">
                                 <thead><tr><th>Metric</th><th>Value</th></tr></thead>
                                 <tbody>
-                                    <tr><td>Adoption Rate (% of Pro Users)</td><td><input type="number" id="pro-aff-adoption"></td></tr>
-                                    <tr><td>Avg. Copiers per Affiliate</td><td><input type="number" id="pro-aff-copiers"></td></tr>
-                                    <tr><td>Avg. AUM per Copier ($)</td><td><input type="number" id="pro-aff-aum"></td></tr>
-                                    <tr><td><b>Quantix Profit Share (%)</b></td><td><input type="number" id="pro-aff-share"></td></tr>
+                                    <tr><td data-label="Metric">Adoption Rate (% of Pro Users)</td><td data-label="Value"><input type="number" id="pro-aff-adoption"></td></tr>
+                                    <tr><td data-label="Metric">Avg. Copiers per Affiliate</td><td data-label="Value"><input type="number" id="pro-aff-copiers"></td></tr>
+                                    <tr><td data-label="Metric">Avg. AUM per Copier ($)</td><td data-label="Value"><input type="number" id="pro-aff-aum"></td></tr>
+                                    <tr><td data-label="Metric"><b>Quantix Profit Share (%)</b></td><td data-label="Value"><input type="number" id="pro-aff-share"></td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -472,11 +514,11 @@
                     <div class="card pro-assumption-card">
                         <h3>Server Cost Assumptions</h3>
                         <div class="table-container">
-                             <table class="data-table" style="display:table; margin-top:0;">
+                             <table class="data-table responsive-table" style="display:table; margin-top:0;">
                                 <thead><tr><th>Metric</th><th>Monthly Cost ($)</th></tr></thead>
                                 <tbody>
-                                    <tr><td>Cost / Pro Client</td><td><input type="number" id="pro-server-pro"></td></tr>
-                                    <tr><td>Cost / Enterprise Client</td><td><input type="number" id="pro-server-ent"></td></tr>
+                                    <tr><td data-label="Metric">Cost / Pro Client</td><td data-label="Monthly Cost ($)"><input type="number" id="pro-server-pro"></td></tr>
+                                    <tr><td data-label="Metric">Cost / Enterprise Client</td><td data-label="Monthly Cost ($)"><input type="number" id="pro-server-ent"></td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -489,7 +531,7 @@
             <section>
                 <h2>2. 5-Year Financial Summary</h2>
                 <div class="card yearly-summary-card"><div class="table-container">
-                    <table class="summary-table" id="pro-yearly-summary"></table>
+                    <table class="summary-table responsive-table" id="pro-yearly-summary"></table>
                 </div></div>
             </section>
              <section>
@@ -518,7 +560,7 @@
                 <div class="dashboard-grid">
                     <div class="card" style="grid-column: span 12;">
                         <div class="table-container">
-                            <table class="monthly-table" id="hiring-plan-table"></table>
+                            <table class="monthly-table responsive-table" id="hiring-plan-table"></table>
                         </div>
                     </div>
                 </div>
@@ -528,7 +570,7 @@
                  <p style="font-size: 0.9rem; font-style: italic; color: var(--text-secondary); margin-top:-1.5rem;">Adjustment Percentages are calculated based on Timing of FTE; Partial staff/service and/or Geo-Location of FTE/Service</p>
                  <div class="card" style="grid-column: span 12;">
                     <div class="table-container">
-                        <table class="monthly-table" style="font-size:12px;" id="salary-adjustment-table"></table>
+                        <table class="monthly-table responsive-table" style="font-size:12px;" id="salary-adjustment-table"></table>
                     </div>
                 </div>
             </section>
@@ -536,7 +578,7 @@
                 <h2>General Budget</h2>
                  <div class="card" style="grid-column: span 12;">
                      <div class="table-container">
-                        <table class="monthly-table" id="general-budget-table"></table>
+                        <table class="monthly-table responsive-table" id="general-budget-table"></table>
                     </div>
                 </div>
             </section>
@@ -545,7 +587,7 @@
                  <p style="font-size: 0.9rem; font-style: italic; color: var(--text-secondary); margin-top:-1.5rem;">all salaries are based on salary base*adjustment</p>
                  <div class="year-buttons" id="opex-year-buttons"></div>
                 <div class="card" style="grid-column: span 12;">
-                    <div class="table-container"><table class="monthly-table" id="opex-details-table"></table></div>
+                    <div class="table-container"><table class="monthly-table responsive-table" id="opex-details-table"></table></div>
                 </div>
             </section>
         </div>
@@ -633,8 +675,8 @@
     <script>
     /**
      * @file Manages the Quantix Interactive Financial Dashboard.
-     * @version 18.1
-     * @description This version updates titles and layout based on user feedback.
+     * @version 18.2
+     * @description This version updates layout in the Marketplace section and adds responsive table styles.
      */
     
     // --- GLOBAL STATE AND CONFIGURATION ---
@@ -869,24 +911,24 @@
         const peakCashNeed = Math.min(0, ...cumulativeNetIncome);
         document.getElementById('funding-kpis').innerHTML = `<div class="metric"><div class="metric-label">Peak Cumulative Cash Need</div><div class="metric-value loss">${formatCurrency(peakCashNeed)}</div></div><div class="metric"><div class="metric-label">Recommended Target (30% Buffer)</div><div class="metric-value profit">${formatCurrency(Math.abs(peakCashNeed) * 1.3)}</div></div>`;
         
-        let quarterlyTableHTML = `<table class="data-table" style="display:table; margin-top:0;"><thead><tr><th>Quarter End</th><th>Quarterly Net</th><th>Cumulative Position</th></tr></thead><tbody>`;
-        for (let q = 1; q <= 8; q++) { const endMonthIndex=q*3-1; const quarterlyNet=monthlyNetIncome.slice(endMonthIndex-2,endMonthIndex+1).reduce((a,b)=>a+b,0); quarterlyTableHTML += `<tr><td>Y${Math.ceil(q/4)}-Q${q%4||4}</td><td class="${quarterlyNet<0?'loss':'profit'}">${formatCurrency(quarterlyNet)}</td><td class="${cumulativeNetIncome[endMonthIndex]<0?'loss':'profit'}">${formatCurrency(cumulativeNetIncome[endMonthIndex])}</td></tr>`; }
+        let quarterlyTableHTML = `<table class="data-table responsive-table" style="display:table; margin-top:0;"><thead><tr><th>Quarter End</th><th>Quarterly Net</th><th>Cumulative Position</th></tr></thead><tbody>`;
+        for (let q = 1; q <= 8; q++) { const endMonthIndex=q*3-1; const quarterlyNet=monthlyNetIncome.slice(endMonthIndex-2,endMonthIndex+1).reduce((a,b)=>a+b,0); quarterlyTableHTML += `<tr><td data-label="Quarter End">Y${Math.ceil(q/4)}-Q${q%4||4}</td><td data-label="Quarterly Net" class="${quarterlyNet<0?'loss':'profit'}">${formatCurrency(quarterlyNet)}</td><td data-label="Cumulative Position" class="${cumulativeNetIncome[endMonthIndex]<0?'loss':'profit'}">${formatCurrency(cumulativeNetIncome[endMonthIndex])}</td></tr>`; }
         document.getElementById('quarterly-cash-flow-table').innerHTML = quarterlyTableHTML+`</tbody></table>`;
         
-        document.getElementById('eoy-kpi-table').innerHTML = `<table class="data-table" style="display:table;"><thead><tr><th>Metric (End of Year)</th>${Array.from({length:5},(_,i)=>`<th>Y${i+1}</th>`).join('')}</tr></thead><tbody>
-        <tr class="kpi-driver-row"><td colspan="6" style="text-align:left;">Revenue Drivers</td></tr>
-        <tr><td>Monthly Recurring Revenue (MRR)<p class="kpi-definition">Total monthly subscription revenue from IQ platform.</p></td>${iqData.yearly.mrr.map(mrr=>`<td>${formatCurrency(mrr)}</td>`).join('')}</tr>
-        <tr><td>Revenue AUM<p class="kpi-definition">Total value of user funds managed by Quantix bots.</p></td>${gtmCryptoData.yearly_summary.aum.map((u,i)=>`<td>${formatCurrency(u+gtmForexData.yearly_summary.aum[i])}</td>`).join('')}</tr>
-        <tr><td>Paid MAU (IQ)<p class="kpi-definition">Total paying subscribers for the IQ platform.</p></td>${iqData.yearly.paidUsers.map(u=>`<td>${formatNumber(u)}</td>`).join('')}</tr>
-        <tr class="kpi-driver-row"><td colspan="6" style="text-align:left;">Supporting Metrics</td></tr>
-        <tr><td># Marketplace Copiers</td>${gtmCryptoData.yearly_summary.users.map((u,i)=>`<td>${formatNumber(u+gtmForexData.yearly_summary.users[i])}</td>`).join('')}</tr>
-        <tr><td># Pro Contracts</td>${proData.yearly.totalPro.map((p,i)=>`<td>${formatNumber(p+proData.yearly.totalEnterprise[i])}</td>`).join('')}</tr>
-        <tr><td># FTE</td>${peopleData.yearlyTotals.fte.map(f=>`<td>${f}</td>`).join('')}</tr>
-        <tr class="total-row"><td>Total Revenue</td>${totalRevenue.map(r=>`<td>${formatCurrency(r)}</td>`).join('')}</tr>
-        <tr class="total-row loss"><td>Operating Expense</td>${peopleData.yearlyTotals.totalOpEx.map(val=>`<td>(${formatCurrency(val)})</td>`).join('')}</tr>
+        document.getElementById('eoy-kpi-table').innerHTML = `<table class="data-table responsive-table" style="display:table;"><thead><tr><th>Metric (End of Year)</th>${Array.from({length:5},(_,i)=>`<th>Y${i+1}</th>`).join('')}</tr></thead><tbody>
+        <tr class="kpi-driver-row"><td colspan="6" style="text-align:left;" data-label="Section">Revenue Drivers</td></tr>
+        <tr><td data-label="Metric">Monthly Recurring Revenue (MRR)<p class="kpi-definition">Total monthly subscription revenue from IQ platform.</p></td>${iqData.yearly.mrr.map((mrr,i)=>`<td data-label="Y${i+1}">${formatCurrency(mrr)}</td>`).join('')}</tr>
+        <tr><td data-label="Metric">Revenue AUM<p class="kpi-definition">Total value of user funds managed by Quantix bots.</p></td>${gtmCryptoData.yearly_summary.aum.map((u,i)=>`<td data-label="Y${i+1}">${formatCurrency(u+gtmForexData.yearly_summary.aum[i])}</td>`).join('')}</tr>
+        <tr><td data-label="Metric">Paid MAU (IQ)<p class="kpi-definition">Total paying subscribers for the IQ platform.</p></td>${iqData.yearly.paidUsers.map((u,i)=>`<td data-label="Y${i+1}">${formatNumber(u)}</td>`).join('')}</tr>
+        <tr class="kpi-driver-row"><td colspan="6" style="text-align:left;" data-label="Section">Supporting Metrics</td></tr>
+        <tr><td data-label="Metric"># Marketplace Copiers</td>${gtmCryptoData.yearly_summary.users.map((u,i)=>`<td data-label="Y${i+1}">${formatNumber(u+gtmForexData.yearly_summary.users[i])}</td>`).join('')}</tr>
+        <tr><td data-label="Metric"># Pro Contracts</td>${proData.yearly.totalPro.map((p,i)=>`<td data-label="Y${i+1}">${formatNumber(p+proData.yearly.totalEnterprise[i])}</td>`).join('')}</tr>
+        <tr><td data-label="Metric"># FTE</td>${peopleData.yearlyTotals.fte.map((f,i)=>`<td data-label="Y${i+1}">${f}</td>`).join('')}</tr>
+        <tr class="total-row"><td data-label="Metric">Total Revenue</td>${totalRevenue.map((r,i)=>`<td data-label="Y${i+1}">${formatCurrency(r)}</td>`).join('')}</tr>
+        <tr class="total-row loss"><td data-label="Metric">Operating Expense</td>${peopleData.yearlyTotals.totalOpEx.map((val,i)=>`<td data-label="Y${i+1}">(${formatCurrency(val)})</td>`).join('')}</tr>
         </tbody></table>`;
         
-        document.getElementById('summary-income-statement').innerHTML = `<thead><tr><th>Income Statement Summary</th>${Array.from({length:5},(_,i)=>`<th>Y${i+1}</th>`).join('')}</tr></thead><tbody><tr class="section-header"><td colspan="6">Revenue</td></tr><tr><td class="sub-item">Marketplace</td>${gtmCryptoData.yearly_summary.revenue.map((val,i)=>`<td>${formatCurrency(val+gtmForexData.yearly_summary.revenue[i])}</td>`).join('')}</tr><tr><td class="sub-item">Quantix IQ</td>${iqData.yearly.revenue.map(val=>`<td>${formatCurrency(val)}</td>`).join('')}</tr><tr><td class="sub-item">Quantix Pro</td>${proData.yearly.revenue.map(val=>`<td>${formatCurrency(val)}</td>`).join('')}</tr><tr class="total-row"><td>Total Revenue</td>${totalRevenue.map(val=>`<td>${formatCurrency(val)}</td>`).join('')}</tr><tr class="section-header"><td colspan="6">Direct Costs</td></tr><tr><td class="sub-item">Marketplace</td>${gtmCryptoData.yearly_summary.costs.map((val,i)=>`<td>(${formatCurrency(Math.abs(val)+Math.abs(gtmForexData.yearly_summary.costs[i]))})</td>`).join('')}</tr><tr><td class="sub-item">Quantix IQ</td>${iqData.yearly.acqCost.map(val=>`<td>(${formatCurrency(val)})</td>`).join('')}</tr><tr><td class="sub-item">Quantix Pro</td>${proData.yearly.costs.map(val=>`<td>(${formatCurrency(val)})</td>`).join('')}</tr><tr class="total-row"><td>Total Direct Costs</td>${totalDirectCosts.map(val=>`<td>(${formatCurrency(val)})</td>`).join('')}</tr><tr><td><strong>Gross Profit</strong></td>${grossProfit.map(val=>`<td class="${val<0?'loss':'profit'}"><strong>${formatCurrency(val)}</strong></td>`).join('')}</tr><tr class="section-header"><td colspan="6">Operating Expenses</td></tr><tr><td class="sub-item">Total Operating Expenses</td>${peopleData.yearlyTotals.totalOpEx.map(val=>`<td>(${formatCurrency(val)})</td>`).join('')}</tr><tr class="total-row-final"><td><strong>Net Income</strong></td>${yearlyNetIncome.map(val=>`<td class="${val<0?'loss':'profit'}"><strong>${formatCurrency(val)}</strong></td>`).join('')}</tr></tbody>`;
+        document.getElementById('summary-income-statement').innerHTML = `<thead><tr><th>Income Statement Summary</th>${Array.from({length:5},(_,i)=>`<th>Y${i+1}</th>`).join('')}</tr></thead><tbody><tr class="section-header"><td colspan="6" data-label="Section">Revenue</td></tr><tr><td class="sub-item" data-label="Metric">Marketplace</td>${gtmCryptoData.yearly_summary.revenue.map((val,i)=>`<td data-label="Y${i+1}">${formatCurrency(val+gtmForexData.yearly_summary.revenue[i])}</td>`).join('')}</tr><tr><td class="sub-item" data-label="Metric">Quantix IQ</td>${iqData.yearly.revenue.map((val,i)=>`<td data-label="Y${i+1}">${formatCurrency(val)}</td>`).join('')}</tr><tr><td class="sub-item" data-label="Metric">Quantix Pro</td>${proData.yearly.revenue.map((val,i)=>`<td data-label="Y${i+1}">${formatCurrency(val)}</td>`).join('')}</tr><tr class="total-row"><td data-label="Metric">Total Revenue</td>${totalRevenue.map((val,i)=>`<td data-label="Y${i+1}">${formatCurrency(val)}</td>`).join('')}</tr><tr class="section-header"><td colspan="6" data-label="Section">Direct Costs</td></tr><tr><td class="sub-item" data-label="Metric">Marketplace</td>${gtmCryptoData.yearly_summary.costs.map((val,i)=>`<td data-label="Y${i+1}">(${formatCurrency(Math.abs(val)+Math.abs(gtmForexData.yearly_summary.costs[i]))})</td>`).join('')}</tr><tr><td class="sub-item" data-label="Metric">Quantix IQ</td>${iqData.yearly.acqCost.map((val,i)=>`<td data-label="Y${i+1}">(${formatCurrency(val)})</td>`).join('')}</tr><tr><td class="sub-item" data-label="Metric">Quantix Pro</td>${proData.yearly.costs.map((val,i)=>`<td data-label="Y${i+1}">(${formatCurrency(val)})</td>`).join('')}</tr><tr class="total-row"><td data-label="Metric">Total Direct Costs</td>${totalDirectCosts.map((val,i)=>`<td data-label="Y${i+1}">(${formatCurrency(val)})</td>`).join('')}</tr><tr><td data-label="Metric"><strong>Gross Profit</strong></td>${grossProfit.map((val,i)=>`<td data-label="Y${i+1}" class="${val<0?'loss':'profit'}"><strong>${formatCurrency(val)}</strong></td>`).join('')}</tr><tr class="section-header"><td colspan="6" data-label="Section">Operating Expenses</td></tr><tr><td class="sub-item" data-label="Metric">Total Operating Expenses</td>${peopleData.yearlyTotals.totalOpEx.map((val,i)=>`<td data-label="Y${i+1}">(${formatCurrency(val)})</td>`).join('')}</tr><tr class="total-row-final"><td data-label="Metric"><strong>Net Income</strong></td>${yearlyNetIncome.map((val,i)=>`<td data-label="Y${i+1}" class="${val<0?'loss':'profit'}"><strong>${formatCurrency(val)}</strong></td>`).join('')}</tr></tbody>`;
         
         const revChartData = { labels:Array.from({length:5},(_,i)=>`${START_YEAR+i}`), datasets:[{label:'Marketplace',data:gtmCryptoData.yearly_summary.revenue.map((v,i)=>v+gtmForexData.yearly_summary.revenue[i]),backgroundColor:'#0077b6'},{label:'Quantix IQ',data:iqData.yearly.revenue,backgroundColor:'#f77829'},{label:'Quantix Pro',data:proData.yearly.revenue,backgroundColor:'#3fb950'}]};
         renderChart('revenueBreakdown', 'revenueBreakdownChart', {type:'bar', data:revChartData, options:{responsive:true,maintainAspectRatio:false,plugins:{title:{display:true,text:'Revenue by Business Unit',color:'#e6edf3',font:{size:18}},legend:{position:'bottom',labels:{color:'#e6edf3'}}},scales:{x:{stacked:true,ticks:{color:'#e6edf3'},grid:{color:'#30363d'}},y:{stacked:true,ticks:{color:'#e6edf3',callback:v=>formatCurrency(v,true)},grid:{color:'#30363d'}}}}});
@@ -909,28 +951,28 @@
         const yearlyTotals = Array(5).fill(0);
         for (const role in PEOPLE_DEFAULTS.hiringPlan) { 
             const baseSalary = PEOPLE_DEFAULTS.employees.find(e => e.role === role)?.baseSalary || 0;
-            hiringPlanHTML += `<tr><td>${role}</td><td>${formatCurrency(baseSalary)}</td>`;
+            hiringPlanHTML += `<tr><td data-label="Position">${role}</td><td data-label="Base Salary">${formatCurrency(baseSalary)}</td>`;
             PEOPLE_DEFAULTS.hiringPlan[role].forEach((count, index) => {
-                hiringPlanHTML += `<td>${count}</td>`;
+                hiringPlanHTML += `<td data-label="Year ${index+1}">${count}</td>`;
                 yearlyTotals[index] += count;
             });
             hiringPlanHTML += `</tr>`;
         }
-        hiringPlanHTML += `<tr class="total-row"><td><strong>Total</strong></td><td>-</td>${yearlyTotals.map(total => `<td><strong>${total}</strong></td>`).join('')}</tr>`;
+        hiringPlanHTML += `<tr class="total-row"><td data-label="Position"><strong>Total</strong></td><td data-label="Base Salary">-</td>${yearlyTotals.map((total,i) => `<td data-label="Year ${i+1}"><strong>${total}</strong></td>`).join('')}</tr>`;
         document.getElementById('hiring-plan-table').innerHTML = hiringPlanHTML + `</tbody>`;
 
         let adjustmentHTML = `<thead><tr><th>Position</th><th>Year 1 Adj.</th><th>Year 2 Adj.</th><th>Year 3 Adj.</th><th>Year 4 Adj.</th><th>Year 5 Adj.</th></tr></thead><tbody>`;
-        for (const role in PEOPLE_DEFAULTS.salaryAdjustments) { adjustmentHTML += `<tr><td>${role}</td>${PEOPLE_DEFAULTS.salaryAdjustments[role].map(adj => `<td class="${adj > 0 ? 'profit' : adj < 0 ? 'loss' : ''}">${(adj * 100).toFixed(0)}%</td>`).join('')}</tr>`; }
+        for (const role in PEOPLE_DEFAULTS.salaryAdjustments) { adjustmentHTML += `<tr><td data-label="Position">${role}</td>${PEOPLE_DEFAULTS.salaryAdjustments[role].map((adj,i) => `<td data-label="Year ${i+1} Adj." class="${adj > 0 ? 'profit' : adj < 0 ? 'loss' : ''}">${(adj * 100).toFixed(0)}%</td>`).join('')}</tr>`; }
         document.getElementById('salary-adjustment-table').innerHTML = adjustmentHTML + `</tbody>`;
         
         let budgetHTML = `<thead><tr><th>Cost Centre</th><th>Annual</th></tr></thead><tbody>`;
-        for (const item in PEOPLE_DEFAULTS.generalBudget) { budgetHTML += `<tr><td>${item.replace(/([A-Z])/g, ' $1').trim()}</td><td>${PEOPLE_DEFAULTS.generalBudget[item] === 'Tiered' ? 'Tiered' : formatCurrency(PEOPLE_DEFAULTS.generalBudget[item])}</td></tr>`; }
+        for (const item in PEOPLE_DEFAULTS.generalBudget) { budgetHTML += `<tr><td data-label="Cost Centre">${item.replace(/([A-Z])/g, ' $1').trim()}</td><td data-label="Annual">${PEOPLE_DEFAULTS.generalBudget[item] === 'Tiered' ? 'Tiered' : formatCurrency(PEOPLE_DEFAULTS.generalBudget[item])}</td></tr>`; }
         document.getElementById('general-budget-table').innerHTML = budgetHTML + `</tbody>`;
 
         let opexDetailsHTML = `<thead><tr><th>Month</th><th>FTE</th><th>Payroll</th><th>Benefits & Taxes</th><th>Recruiting Fees</th><th>Sales Bonuses</th><th>Travel</th><th>IT & Comms</th><th>Total OpEx</th></tr></thead><tbody>`;
         data.monthlyData.forEach(m => {
             const year = Math.ceil(m.month / 12);
-            opexDetailsHTML += `<tr class="monthly-opex-row" data-year="${year}"><td>M${(m.month - 1) % 12 + 1}</td><td>${m.activeFTE}</td><td>${formatCurrency(m.payroll)}</td><td>${formatCurrency(m.benefitsTaxes)}</td><td class="${m.recruitingFees > 0 ? 'loss' : ''}">${formatCurrency(m.recruitingFees)}</td><td class="${m.salesBonuses > 0 ? 'loss' : ''}">${formatCurrency(m.salesBonuses)}</td><td>${formatCurrency(m.travel)}</td><td>${formatCurrency(m.it + m.comms)}</td><td><strong>${formatCurrency(m.totalOpEx)}</strong></td></tr>`;
+            opexDetailsHTML += `<tr class="monthly-opex-row" data-year="${year}"><td data-label="Month">M${(m.month - 1) % 12 + 1}</td><td data-label="FTE">${m.activeFTE}</td><td data-label="Payroll">${formatCurrency(m.payroll)}</td><td data-label="Benefits & Taxes">${formatCurrency(m.benefitsTaxes)}</td><td data-label="Recruiting Fees" class="${m.recruitingFees > 0 ? 'loss' : ''}">${formatCurrency(m.recruitingFees)}</td><td data-label="Sales Bonuses" class="${m.salesBonuses > 0 ? 'loss' : ''}">${formatCurrency(m.salesBonuses)}</td><td data-label="Travel">${formatCurrency(m.travel)}</td><td data-label="IT & Comms">${formatCurrency(m.it + m.comms)}</td><td data-label="Total OpEx"><strong>${formatCurrency(m.totalOpEx)}</strong></td></tr>`;
         });
         document.getElementById('opex-details-table').innerHTML = opexDetailsHTML + `</tbody>`;
 
@@ -1107,7 +1149,7 @@
         for (let q = 1; q <= 4; q++) {
             const newPartners = Math.min(data.partnerCount - partnersAdded, partnersPerQuarter);
             partnersAdded += newPartners;
-            deploymentHTML += `<tr><td>Y${rolloutStartYear} Q${q}</td><td>${newPartners}</td><td>${partnersAdded}</td><td>${formatNumber(partnersAdded * 40)}</td></tr>`;
+            deploymentHTML += `<tr><td data-label="Quarter">Y${rolloutStartYear} Q${q}</td><td data-label="New Partners Added">${newPartners}</td><td data-label="Total Partners">${partnersAdded}</td><td data-label="Total Active Bots">${formatNumber(partnersAdded * 40)}</td></tr>`;
         }
         document.getElementById('deployment-table-body').innerHTML = deploymentHTML;
 
@@ -1115,11 +1157,11 @@
         for (let y = 1; y <= 5; y++) {
             const yearData = data.monthly.filter(m => Math.ceil(m.month / 12) === y);
             const eoyCopiersPerBot = yearData.length > 0 ? yearData[yearData.length - 1].copiersPerBot : 0;
-            copierGrowthHTML += `<tr><td>Year ${y}</td><td>${eoyCopiersPerBot.toFixed(2)}</td></tr>`;
+            copierGrowthHTML += `<tr><td data-label="Year">Year ${y}</td><td data-label="Avg. Copiers / Bot (EOY)">${eoyCopiersPerBot.toFixed(2)}</td></tr>`;
         }
         document.getElementById('copier-growth-table-body').innerHTML = copierGrowthHTML;
 
-        document.getElementById('financial-assumptions-table-body').innerHTML = `<tr><td>Avg. Annual Marketing</td><td>${formatCurrency(150000)}</td></tr><tr><td>Bot Investment / Bot</td><td>${formatCurrency(1000)}</td></tr><tr><td>Total Deployment Cost</td><td>${formatCurrency(40 * data.partnerCount * 1000)}</td></tr><tr><td><em>(Incurred in Year ${rolloutStartYear})</em></td><td></td></tr>`;
+        document.getElementById('financial-assumptions-table-body').innerHTML = `<tr><td data-label="Metric">Avg. Annual Marketing</td><td data-label="Value">${formatCurrency(150000)}</td></tr><tr><td data-label="Metric">Bot Investment / Bot</td><td data-label="Value">${formatCurrency(1000)}</td></tr><tr><td data-label="Metric">Total Deployment Cost</td><td data-label="Value">${formatCurrency(40 * data.partnerCount * 1000)}</td></tr><tr><td data-label="Metric"><em>(Incurred in Year ${rolloutStartYear})</em></td><td data-label="Value"></td></tr>`;
 
         const chartLabels = Array.from({ length: 5 }, (_, i) => `${START_YEAR + i}`);
         const chartColors = { blue: 'rgba(88,166,255,0.7)', green: 'rgba(63,185,80,0.7)', orange: 'rgba(247,120,41,0.7)', text: '#e6edf3', grid: '#30363d' };
@@ -1141,13 +1183,13 @@
         data.monthly.forEach(m => {
             const year = Math.ceil(m.month / 12);
             monthlyProjectionsHTML += `<tr class="monthly-gtm-row" data-year="${year}">
-                <td>M${(m.month - 1) % 12 + 1}</td>
-                <td>${m.activePartners}</td>
-                <td>${m.copiersPerBot.toFixed(2)}</td>
-                <td>${formatNumber(m.totalCopiers)}</td>
-                <td>${formatCurrency(m.aum)}</td>
-                <td>${formatCurrency(m.revenue)}</td>
-                <td class="${m.netProfit < 0 ? 'loss' : 'profit'}">${formatCurrency(m.netProfit)}</td>
+                <td data-label="Month">M${(m.month - 1) % 12 + 1}</td>
+                <td data-label="Active Partners">${m.activePartners}</td>
+                <td data-label="Copiers / Bot">${m.copiersPerBot.toFixed(2)}</td>
+                <td data-label="Total Copiers">${formatNumber(m.totalCopiers)}</td>
+                <td data-label="AUM">${formatCurrency(m.aum)}</td>
+                <td data-label="Gross Revenue">${formatCurrency(m.revenue)}</td>
+                <td data-label="Net Profit/Loss" class="${m.netProfit < 0 ? 'loss' : 'profit'}">${formatCurrency(m.netProfit)}</td>
             </tr>`;
         });
         const projectionBody = document.getElementById("monthly-projections-table-body");
@@ -1167,7 +1209,7 @@
         });
     }
 
-    function initializeIQDashboard(){syncUIToIQState(),updateIQView();const e=document.querySelector('.iq-dashboard-container');e&&e.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)return;const{action:n,value:l}=t.dataset;'show-iq-year'===n?showIQYear(parseInt(l),t):'rerun-iq-model'===n&&updateIQView()})}function syncUIToIQState(){document.getElementById('iq-trials-y1').value=IQ_PARAMS.newFreeTrialsPerMonth[1],document.getElementById('iq-trials-y2').value=IQ_PARAMS.newFreeTrialsPerMonth[2],document.getElementById('iq-trials-y3').value=IQ_PARAMS.newFreeTrialsPerMonth[3],document.getElementById('iq-conv-y1').value=100*IQ_PARAMS.convRate[1],document.getElementById('iq-conv-y2').value=100*IQ_PARAMS.convRate[2],document.getElementById('iq-conv-y3').value=100*IQ_PARAMS.convRate[3],document.getElementById('iq-churn-y1').value=100*IQ_PARAMS.annualPaidChurn[1],document.getElementById('iq-churn-y2').value=100*IQ_PARAMS.annualPaidChurn[2],document.getElementById('iq-churn-y3').value=100*IQ_PARAMS.annualPaidChurn[3],document.getElementById('iq-cost-per-trial').value=IQ_PARAMS.costPerFreeTrial,document.getElementById('iq-annual-uptake').value=100*IQ_PARAMS.planUptake.annual}function syncAndGetIQInputs(){IQ_PARAMS.newFreeTrialsPerMonth={1:parseInt(document.getElementById('iq-trials-y1').value)||0,2:parseInt(document.getElementById('iq-trials-y2').value)||0,3:parseInt(document.getElementById('iq-trials-y3').value)||0},IQ_PARAMS.convRate={1:(parseFloat(document.getElementById('iq-conv-y1').value)||0)/100,2:(parseFloat(document.getElementById('iq-conv-y2').value)||0)/100,3:(parseFloat(document.getElementById('iq-conv-y3').value)||0)/100},IQ_PARAMS.annualPaidChurn={1:(parseFloat(document.getElementById('iq-churn-y1').value)||0)/100,2:(parseFloat(document.getElementById('iq-churn-y2').value)||0)/100,3:(parseFloat(document.getElementById('iq-churn-y3').value)||0)/100},IQ_PARAMS.costPerFreeTrial=parseFloat(document.getElementById('iq-cost-per-trial').value)||0;const e=(parseFloat(document.getElementById('iq-annual-uptake').value)||0)/100;return IQ_PARAMS.planUptake={annual:e,monthly:1-e},IQ_PARAMS}function updateIQView(){const e=syncAndGetIQInputs(),t=calculateIQModel(e);renderIQSummary(t),renderIQMonthly(t)}function renderIQSummary(e){document.getElementById('iq-yearly-summary').innerHTML=`<thead><tr><th>Year</th><th>Total Revenue</th><th>Direct Costs</th><th>Gross Profit</th></tr></thead><tbody>${e.yearly.revenue.map((t,n)=>{const l=e.yearly.grossProfit[n];return`<tr><td><strong>${START_YEAR+n}</strong></td><td class="profit">${formatCurrency(t)}</td><td class="loss">(${formatCurrency(e.yearly.acqCost[n])})</td><td class="${l>0?'profit':'loss'}"><strong>${formatCurrency(l)}</strong></td></tr>`}).join('')}</tbody>`}function renderIQMonthly(e){let t='',n='';for(let l=1;l<=5;l++){const a=e.monthly.filter(e=>Math.ceil(e.month/12)===l),o=1===l?'active':'';n+=`<button data-action="show-iq-year" data-value="${l}" class="year-btn ${o}">Year ${l}</button>`,t+=`<table id="iq-users-${l}" class="data-table monthly-table ${o}"><thead><tr><th>Month</th><th>New Free Trials</th><th>New Paid Users</th><th>Active Free Users</th><th>Total Paid Users</th></tr></thead><tbody>${a.map(e=>`<tr><td>M${(e.month-1)%12+1}</td><td>${formatNumber(e.newFree)}</td><td>${formatNumber(e.newPaid)}</td><td>${formatNumber(e.freeTotal)}</td><td>${formatNumber(e.paidTotal)}</td></tr>`).join('')}</tbody></table>`}document.getElementById('year-buttons').innerHTML=n,document.getElementById('iq-users-tables').innerHTML=t}function showIQYear(e,t){document.querySelectorAll('.iq-dashboard-container .year-btn').forEach(e=>e.classList.remove('active')),t.classList.add('active'),document.querySelectorAll('.iq-dashboard-container .data-table.monthly-table').forEach(e=>e.classList.remove('active')),document.getElementById(`iq-users-${e}`).classList.add('active')}function initializeProDashboard(){syncUIToProState(),updateProView();const e=document.querySelector('.pro-dashboard-container');e&&e.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)return;const{action:n,value:l}=t.dataset;'show-pro-year'===n?showProYear(parseInt(l),t):'rerun-pro-model'===n&&updateProView()})}function syncUIToProState(){document.getElementById('pro-nre-pro').value=PRO_PARAMS.pricing.pro.nre,document.getElementById('pro-license-pro').value=PRO_PARAMS.pricing.pro.license,document.getElementById('pro-nre-ent').value=PRO_PARAMS.pricing.enterprise.nre,document.getElementById('pro-license-ent').value=PRO_PARAMS.pricing.enterprise.license;for(let e=0;e<5;e++)document.getElementById(`pro-deals-pro-y${e+1}`).value=PRO_PARAMS.newDealsPerYear.pro[e],document.getElementById(`pro-deals-ent-y${e+1}`).value=PRO_PARAMS.newDealsPerYear.enterprise[e];document.getElementById('pro-aff-adoption').value=100*PRO_PARAMS.affiliateParams.adoptionRate,document.getElementById('pro-aff-copiers').value=PRO_PARAMS.affiliateParams.avgCopiersPerAffiliate,document.getElementById('pro-aff-aum').value=PRO_PARAMS.affiliateParams.avgAumPerCopier,document.getElementById('pro-aff-share').value=100*PRO_PARAMS.affiliateParams.quantixProfitShare,document.getElementById('pro-server-pro').value=PRO_PARAMS.serverCosts.pro,document.getElementById('pro-server-ent').value=PRO_PARAMS.serverCosts.enterprise}function syncAndGetProInputs(){PRO_PARAMS.pricing.pro.nre=parseFloat(document.getElementById('pro-nre-pro').value)||0,PRO_PARAMS.pricing.pro.license=parseFloat(document.getElementById('pro-license-pro').value)||0,PRO_PARAMS.pricing.enterprise.nre=parseFloat(document.getElementById('pro-nre-ent').value)||0,PRO_PARAMS.pricing.enterprise.license=parseFloat(document.getElementById('pro-license-ent').value)||0;for(let e=0;e<5;e++)PRO_PARAMS.newDealsPerYear.pro[e]=parseInt(document.getElementById(`pro-deals-pro-y${e+1}`).value)||0,PRO_PARAMS.newDealsPerYear.enterprise[e]=parseInt(document.getElementById(`pro-deals-ent-y${e+1}`).value)||0;return PRO_PARAMS.affiliateParams.adoptionRate=(parseFloat(document.getElementById('pro-aff-adoption').value)||0)/100,PRO_PARAMS.affiliateParams.avgCopiersPerAffiliate=parseInt(document.getElementById('pro-aff-copiers').value)||0,PRO_PARAMS.affiliateParams.avgAumPerCopier=parseFloat(document.getElementById('pro-aff-aum').value)||0,PRO_PARAMS.affiliateParams.quantixProfitShare=(parseFloat(document.getElementById('pro-aff-share').value)||0)/100,PRO_PARAMS.serverCosts.pro=parseFloat(document.getElementById('pro-server-pro').value)||0,PRO_PARAMS.serverCosts.enterprise=parseFloat(document.getElementById('pro-server-ent').value)||0,PRO_PARAMS}function updateProView(){const e=syncAndGetProInputs(),t=calculateProModel(e);renderProSummary(t),renderProMonthly(t)}function renderProSummary(e){document.getElementById('pro-yearly-summary').innerHTML=`<thead><tr><th>Year</th><th>Total Revenue</th><th>Direct Costs</th><th>Gross Profit</th><th>Total Contracts</th></tr></thead><tbody>${e.yearly.revenue.map((t,n)=>{const l=e.yearly.grossProfit[n],r=e.yearly.costs[n];return`<tr><td><strong>${START_YEAR+n}</strong></td><td class="profit">${formatCurrency(t)}</td><td class="loss">(${formatCurrency(r)})</td><td class="${l>0?'profit':'loss'}"><strong>${formatCurrency(l)}</strong></td><td>${formatNumber(e.yearly.totalPro[n]+e.yearly.totalEnterprise[n])}</td></tr>`}).join('')}</tbody>`}function renderProMonthly(e){let t='',n='';for(let l=1;l<=5;l++){const r=e.monthly.filter(e=>Math.ceil(e.m/12)===l),o=1===l?'active':'';n+=`<button data-action="show-pro-year" data-value="${l}" class="year-btn ${o}">Year ${l}</button>`,t+=`<table id="pro-monthly-${l}" class="data-table monthly-table ${o}">\n                    <thead><tr><th>Month</th><th>New Pro Deals</th><th>New Ent. Deals</th><th>License Revenue</th><th>Affiliate Revenue</th><th>Server Costs</th></tr></thead>\n                    <tbody>${r.map(e=>`<tr><td>M${(e.m-1)%12+1}</td><td>${formatNumber(e.newPro)}</td><td>${formatNumber(e.newEnterprise)}</td><td class="profit">${formatCurrency(e.licenseRevenue)}</td><td class="profit">${formatCurrency(e.affiliateRevenue)}</td><td class="loss">(${formatCurrency(e.serverCost)})</td></tr>`).join('')}</tbody>\n                </table>`}document.getElementById('pro-year-buttons').innerHTML=n,document.getElementById('pro-monthly-tables').innerHTML=t}function showProYear(e,t){document.querySelectorAll('.pro-dashboard-container .year-btn').forEach(e=>e.classList.remove('active')),t.classList.add('active'),document.querySelectorAll('.pro-dashboard-container .data-table.monthly-table').forEach(e=>e.classList.remove('active')),document.getElementById(`pro-monthly-${e}`).classList.add('active')}
+    function initializeIQDashboard(){syncUIToIQState(),updateIQView();const e=document.querySelector('.iq-dashboard-container');e&&e.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)return;const{action:n,value:l}=t.dataset;'show-iq-year'===n?showIQYear(parseInt(l),t):'rerun-iq-model'===n&&updateIQView()})}function syncUIToIQState(){document.getElementById('iq-trials-y1').value=IQ_PARAMS.newFreeTrialsPerMonth[1],document.getElementById('iq-trials-y2').value=IQ_PARAMS.newFreeTrialsPerMonth[2],document.getElementById('iq-trials-y3').value=IQ_PARAMS.newFreeTrialsPerMonth[3],document.getElementById('iq-conv-y1').value=100*IQ_PARAMS.convRate[1],document.getElementById('iq-conv-y2').value=100*IQ_PARAMS.convRate[2],document.getElementById('iq-conv-y3').value=100*IQ_PARAMS.convRate[3],document.getElementById('iq-churn-y1').value=100*IQ_PARAMS.annualPaidChurn[1],document.getElementById('iq-churn-y2').value=100*IQ_PARAMS.annualPaidChurn[2],document.getElementById('iq-churn-y3').value=100*IQ_PARAMS.annualPaidChurn[3],document.getElementById('iq-cost-per-trial').value=IQ_PARAMS.costPerFreeTrial,document.getElementById('iq-annual-uptake').value=100*IQ_PARAMS.planUptake.annual}function syncAndGetIQInputs(){IQ_PARAMS.newFreeTrialsPerMonth={1:parseInt(document.getElementById('iq-trials-y1').value)||0,2:parseInt(document.getElementById('iq-trials-y2').value)||0,3:parseInt(document.getElementById('iq-trials-y3').value)||0},IQ_PARAMS.convRate={1:(parseFloat(document.getElementById('iq-conv-y1').value)||0)/100,2:(parseFloat(document.getElementById('iq-conv-y2').value)||0)/100,3:(parseFloat(document.getElementById('iq-conv-y3').value)||0)/100},IQ_PARAMS.annualPaidChurn={1:(parseFloat(document.getElementById('iq-churn-y1').value)||0)/100,2:(parseFloat(document.getElementById('iq-churn-y2').value)||0)/100,3:(parseFloat(document.getElementById('iq-churn-y3').value)||0)/100},IQ_PARAMS.costPerFreeTrial=parseFloat(document.getElementById('iq-cost-per-trial').value)||0;const e=(parseFloat(document.getElementById('iq-annual-uptake').value)||0)/100;return IQ_PARAMS.planUptake={annual:e,monthly:1-e},IQ_PARAMS}function updateIQView(){const e=syncAndGetIQInputs(),t=calculateIQModel(e);renderIQSummary(t),renderIQMonthly(t)}function renderIQSummary(e){document.getElementById('iq-yearly-summary').innerHTML=`<thead><tr><th>Year</th><th>Total Revenue</th><th>Direct Costs</th><th>Gross Profit</th></tr></thead><tbody>${e.yearly.revenue.map((t,n)=>{const l=e.yearly.grossProfit[n];return`<tr><td data-label="Year"><strong>${START_YEAR+n}</strong></td><td data-label="Total Revenue" class="profit">${formatCurrency(t)}</td><td data-label="Direct Costs" class="loss">(${formatCurrency(e.yearly.acqCost[n])})</td><td data-label="Gross Profit" class="${l>0?'profit':'loss'}"><strong>${formatCurrency(l)}</strong></td></tr>`}).join('')}</tbody>`}function renderIQMonthly(e){let t='',n='';for(let l=1;l<=5;l++){const a=e.monthly.filter(e=>Math.ceil(e.month/12)===l),o=1===l?'active':'';n+=`<button data-action="show-iq-year" data-value="${l}" class="year-btn ${o}">Year ${l}</button>`,t+=`<table id="iq-users-${l}" class="data-table monthly-table responsive-table ${o}"><thead><tr><th>Month</th><th>New Free Trials</th><th>New Paid Users</th><th>Active Free Users</th><th>Total Paid Users</th></tr></thead><tbody>${a.map(e=>`<tr><td data-label="Month">M${(e.month-1)%12+1}</td><td data-label="New Free Trials">${formatNumber(e.newFree)}</td><td data-label="New Paid Users">${formatNumber(e.newPaid)}</td><td data-label="Active Free Users">${formatNumber(e.freeTotal)}</td><td data-label="Total Paid Users">${formatNumber(e.paidTotal)}</td></tr>`).join('')}</tbody></table>`}document.getElementById('year-buttons').innerHTML=n,document.getElementById('iq-users-tables').innerHTML=t}function showIQYear(e,t){document.querySelectorAll('.iq-dashboard-container .year-btn').forEach(e=>e.classList.remove('active')),t.classList.add('active'),document.querySelectorAll('.iq-dashboard-container .data-table.monthly-table').forEach(e=>e.classList.remove('active')),document.getElementById(`iq-users-${e}`).classList.add('active')}function initializeProDashboard(){syncUIToProState(),updateProView();const e=document.querySelector('.pro-dashboard-container');e&&e.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)return;const{action:n,value:l}=t.dataset;'show-pro-year'===n?showProYear(parseInt(l),t):'rerun-pro-model'===n&&updateProView()})}function syncUIToProState(){document.getElementById('pro-nre-pro').value=PRO_PARAMS.pricing.pro.nre,document.getElementById('pro-license-pro').value=PRO_PARAMS.pricing.pro.license,document.getElementById('pro-nre-ent').value=PRO_PARAMS.pricing.enterprise.nre,document.getElementById('pro-license-ent').value=PRO_PARAMS.pricing.enterprise.license;for(let e=0;e<5;e++)document.getElementById(`pro-deals-pro-y${e+1}`).value=PRO_PARAMS.newDealsPerYear.pro[e],document.getElementById(`pro-deals-ent-y${e+1}`).value=PRO_PARAMS.newDealsPerYear.enterprise[e];document.getElementById('pro-aff-adoption').value=100*PRO_PARAMS.affiliateParams.adoptionRate,document.getElementById('pro-aff-copiers').value=PRO_PARAMS.affiliateParams.avgCopiersPerAffiliate,document.getElementById('pro-aff-aum').value=PRO_PARAMS.affiliateParams.avgAumPerCopier,document.getElementById('pro-aff-share').value=100*PRO_PARAMS.affiliateParams.quantixProfitShare,document.getElementById('pro-server-pro').value=PRO_PARAMS.serverCosts.pro,document.getElementById('pro-server-ent').value=PRO_PARAMS.serverCosts.enterprise}function syncAndGetProInputs(){PRO_PARAMS.pricing.pro.nre=parseFloat(document.getElementById('pro-nre-pro').value)||0,PRO_PARAMS.pricing.pro.license=parseFloat(document.getElementById('pro-license-pro').value)||0,PRO_PARAMS.pricing.enterprise.nre=parseFloat(document.getElementById('pro-nre-ent').value)||0,PRO_PARAMS.pricing.enterprise.license=parseFloat(document.getElementById('pro-license-ent').value)||0;for(let e=0;e<5;e++)PRO_PARAMS.newDealsPerYear.pro[e]=parseInt(document.getElementById(`pro-deals-pro-y${e+1}`).value)||0,PRO_PARAMS.newDealsPerYear.enterprise[e]=parseInt(document.getElementById(`pro-deals-ent-y${e+1}`).value)||0;return PRO_PARAMS.affiliateParams.adoptionRate=(parseFloat(document.getElementById('pro-aff-adoption').value)||0)/100,PRO_PARAMS.affiliateParams.avgCopiersPerAffiliate=parseInt(document.getElementById('pro-aff-copiers').value)||0,PRO_PARAMS.affiliateParams.avgAumPerCopier=parseFloat(document.getElementById('pro-aff-aum').value)||0,PRO_PARAMS.affiliateParams.quantixProfitShare=(parseFloat(document.getElementById('pro-aff-share').value)||0)/100,PRO_PARAMS.serverCosts.pro=parseFloat(document.getElementById('pro-server-pro').value)||0,PRO_PARAMS.serverCosts.enterprise=parseFloat(document.getElementById('pro-server-ent').value)||0,PRO_PARAMS}function updateProView(){const e=syncAndGetProInputs(),t=calculateProModel(e);renderProSummary(t),renderProMonthly(t)}function renderProSummary(e){document.getElementById('pro-yearly-summary').innerHTML=`<thead><tr><th>Year</th><th>Total Revenue</th><th>Direct Costs</th><th>Gross Profit</th><th>Total Contracts</th></tr></thead><tbody>${e.yearly.revenue.map((t,n)=>{const l=e.yearly.grossProfit[n],r=e.yearly.costs[n];return`<tr><td data-label="Year"><strong>${START_YEAR+n}</strong></td><td data-label="Total Revenue" class="profit">${formatCurrency(t)}</td><td data-label="Direct Costs" class="loss">(${formatCurrency(r)})</td><td data-label="Gross Profit" class="${l>0?'profit':'loss'}"><strong>${formatCurrency(l)}</strong></td><td data-label="Total Contracts">${formatNumber(e.yearly.totalPro[n]+e.yearly.totalEnterprise[n])}</td></tr>`}).join('')}</tbody>`}function renderProMonthly(e){let t='',n='';for(let l=1;l<=5;l++){const r=e.monthly.filter(e=>Math.ceil(e.m/12)===l),o=1===l?'active':'';n+=`<button data-action="show-pro-year" data-value="${l}" class="year-btn ${o}">Year ${l}</button>`,t+=`<table id="pro-monthly-${l}" class="data-table monthly-table responsive-table ${o}">\n                    <thead><tr><th>Month</th><th>New Pro Deals</th><th>New Ent. Deals</th><th>License Revenue</th><th>Affiliate Revenue</th><th>Server Costs</th></tr></thead>\n                    <tbody>${r.map(e=>`<tr><td data-label="Month">M${(e.m-1)%12+1}</td><td data-label="New Pro Deals">${formatNumber(e.newPro)}</td><td data-label="New Ent. Deals">${formatNumber(e.newEnterprise)}</td><td data-label="License Revenue" class="profit">${formatCurrency(e.licenseRevenue)}</td><td data-label="Affiliate Revenue" class="profit">${formatCurrency(e.affiliateRevenue)}</td><td data-label="Server Costs" class="loss">(${formatCurrency(e.serverCost)})</td></tr>`).join('')}</tbody>\n                </table>`}document.getElementById('pro-year-buttons').innerHTML=n,document.getElementById('pro-monthly-tables').innerHTML=t}function showProYear(e,t){document.querySelectorAll('.pro-dashboard-container .year-btn').forEach(e=>e.classList.remove('active')),t.classList.add('active'),document.querySelectorAll('.pro-dashboard-container .data-table.monthly-table').forEach(e=>e.classList.remove('active')),document.getElementById(`pro-monthly-${e}`).classList.add('active')}
 
     // --- MAIN APPLICATION CONTROLLER ---
     function setMarket(market) {
