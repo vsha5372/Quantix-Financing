@@ -121,13 +121,11 @@
             .strategy-grid, .pro-assumption-grid, .iq-assumption-grid { grid-template-columns: repeat(2, 1fr); }
             .chart-card-aum { grid-column: span 5; }
             .chart-card-revenue { grid-column: span 7; }
-            .kpi-dashboard-card { grid-column: span 12 !important; }
         }
         
         @media (min-width: 1200px) {
             h1 { font-size: 3rem; }
             .strategy-grid { grid-template-columns: repeat(3, 1fr); }
-            .kpi-dashboard-card { grid-column: span 5 !important; }
             .iq-assumption-grid > .card, .pro-assumption-grid > .card { grid-column: span 1; }
         }
     </style>
@@ -187,12 +185,13 @@
             <section>
                 <h2>Funding & Cash Flow</h2>
                  <div class="dashboard-grid">
-                    <div class="card" style="grid-column: span 12; @media (min-width: 1200px) { grid-column: span 7; }">
+                    <div class="card" style="grid-column: span 12;">
                          <div class="chart-container">
                             <canvas id="quarterlyCashFlowChart"></canvas>
                         </div>
                     </div>
-                    <div class="card kpi-dashboard-card" style="grid-column: span 12; @media (min-width: 1200px) { grid-column: span 5; }">
+                    <!-- FIX: Adjusted grid-column to make this card full-width on all screen sizes -->
+                    <div class="card kpi-dashboard-card" style="grid-column: span 12;">
                         <h3 style="text-align:center; color: var(--text-secondary); font-weight: 600;">Funding Requirements</h3>
                         <div id="funding-kpis" class="metric-group"></div>
                         <h3 style="text-align:center; margin-top: 1.5rem; color: var(--text-secondary); font-weight: 600;">Quarterly Cash Flow (First 2 Years)</h3>
@@ -386,7 +385,8 @@
                         </div>
                     </div>
                      <div class="card iq-assumption-card">
-                        <h3>Subscription & Revenue</h3>
+                        <!-- FIX: Renamed title from "Subscription & Revenue" to "Subscription" -->
+                        <h3>Subscription</h3>
                          <div class="table-container"><table class="data-table" style="display:table; margin-top:0;"><thead><tr><th>Plan</th><th>Monthly Cost</th><th>Annual Cost (Billed Upfront)</th></tr></thead><tbody><tr><td>Basic</td><td>$42.00</td><td>$360.00 ($30/mo)</td></tr><tr><td>Pro</td><td>$70.00</td><td>$600.00 ($50/mo)</td></tr><tr><td>Elite</td><td>$210.00</td><td>$1,800.00 ($150/mo)</td></tr></tbody></table></div>
                          <h3 style="margin-top:1.5rem">New Paid User Mix</h3>
                         <div class="table-container"><table class="data-table" style="display:table; margin-top:0;"><thead><tr><th>Year</th><th>Basic</th><th>Pro</th><th>Elite</th></tr></thead><tbody><tr><td>Year 1-5</td><td>60%</td><td>30%</td><td>10%</td></tr></tbody></table></div>
@@ -633,8 +633,8 @@
     <script>
     /**
      * @file Manages the Quantix Interactive Financial Dashboard.
-     * @version 16.0
-     * @description This version updates the People & Budget model with corrected salary adjustments.
+     * @version 18.1
+     * @description This version updates titles and layout based on user feedback.
      */
     
     // --- GLOBAL STATE AND CONFIGURATION ---
@@ -1125,7 +1125,8 @@
         const chartColors = { blue: 'rgba(88,166,255,0.7)', green: 'rgba(63,185,80,0.7)', orange: 'rgba(247,120,41,0.7)', text: '#e6edf3', grid: '#30363d' };
         
         renderChart('aum', 'aumChart', { type: 'bar', data: { labels: chartLabels, datasets: [{ data: data.yearly_summary.aum, backgroundColor: chartColors.blue }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: 'Assets Under Management (AUM)', color: chartColors.text, font: { size: 18 } } }, scales: { y: { ticks: { color: chartColors.text, callback: v => formatCurrency(v, true) }, grid: { color: chartColors.grid } }, x: { ticks: { color: chartColors.text }, grid: { color: chartColors.grid } } } } });
-        renderChart('revenue', 'revenueChart', { type: 'bar', data: { labels: chartLabels, datasets: [{ label: 'Gross Revenue', data: data.yearly_summary.revenue, backgroundColor: chartColors.orange }, { label: 'Net Profit', data: data.yearly_summary.profit, backgroundColor: chartColors.green }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: chartColors.text } }, title: { display: true, text: 'Yearly Revenue vs. Net Profit', color: chartColors.text, font: { size: 18 } } }, scales: { y: { ticks: { color: chartColors.text, callback: v => formatCurrency(v, true) }, grid: { color: chartColors.grid } }, x: { ticks: { color: chartColors.text }, grid: { color: chartColors.grid } } } } });
+        // FIX: Updated chart title and legend
+        renderChart('revenue', 'revenueChart', { type: 'bar', data: { labels: chartLabels, datasets: [{ label: 'Gross Revenue', data: data.yearly_summary.revenue, backgroundColor: chartColors.orange }, { label: 'Net Profit/(Loss)', data: data.yearly_summary.profit, backgroundColor: chartColors.green }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: chartColors.text } }, title: { display: true, text: 'Yearly Revenue vs Net Profit/(Loss)', color: chartColors.text, font: { size: 18 } } }, scales: { y: { ticks: { color: chartColors.text, callback: v => formatCurrency(v, true) }, grid: { color: chartColors.grid } }, x: { ticks: { color: chartColors.text }, grid: { color: chartColors.grid } } } } });
 
         let yearButtonsHTML = "";
         for (let y = 1; y <= 5; y++) {
