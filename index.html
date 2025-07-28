@@ -117,18 +117,19 @@
         }
         summary::-webkit-details-marker { display: none; } /* Hide marker for Chrome/Safari */
         summary::before {
-            content: '▶';
+            content: '+';
             position: absolute;
             left: 0.5rem;
             top: 50%;
             transform: translateY(-50%) rotate(0deg);
-            font-size: 1rem;
+            font-size: 1.5rem;
             font-weight: 500;
             color: var(--accent-blue);
             transition: transform 0.2s ease-in-out;
         }
         details[open] > summary::before {
-            transform: translateY(-50%) rotate(90deg);
+            content: '−';
+            transform: translateY(-50%) rotate(180deg);
         }
         details[open] > summary {
             margin-bottom: 1.5rem;
@@ -309,7 +310,7 @@
                     <div class="dashboard-grid">
                         <div class="card kpi-card"><h3>Year 5 Total Copiers</h3><p class="value blue" id="kpi-copiers"></p></div>
                         <div class="card kpi-card"><h3>Year 5 Net Profit</h3><p class="value green" id="kpi-profit"></p></div>
-                        <div class="card kpi-card"><h3>Total Net Profit</h3><p class="value green" id="kpi-total-profit"></p></div>
+                        <div class="card kpi-card"><h3>Year 5 Revenue AUM</h3><p class="value blue" id="kpi-aum-y5"></p></div>
                         <div class="card kpi-card"><h3>Break-Even Year</h3><p class="value" id="kpi-breakeven"></p></div>
                     </div>
                 </section>
@@ -396,8 +397,6 @@
                                         <th>Total Copiers</th>
                                         <th>Copier AUM</th>
                                         <th>Copier Revenue</th>
-                                        <th>Quantix AUM</th>
-                                        <th>Quantix Revenue</th>
                                         <th>Bot Costs</th>
                                         <th>Net Profit/Loss</th>
                                     </tr>
@@ -714,8 +713,8 @@
     <script>
     /**
      * @file Manages the Quantix Interactive Financial Dashboard.
-     * @version 21.1
-     * @description This version fixes syntax errors in the script and corrects the Quantix AUM calculation.
+     * @version 24.0
+     * @description This version updates the funding calculation to include initial capital investments and refactors a Marketplace KPI.
      */
     
     // --- GLOBAL STATE AND CONFIGURATION ---
@@ -750,13 +749,16 @@
 
     // --- DATA CALCULATION MODELS ---
     
+    /**
+     * Calculates the financial model for the Marketplace business unit.
+     * Note: Initial capital investment is handled at the Summary level, not here.
+     */
     function calculateGTMModel(inputs) {
-        const { market, aumPerUser, monthlyReturn, growthModelType, customParams, linearNewCopiersPerPartner, initialQuantixInvestment } = inputs;
+        const { market, aumPerUser, monthlyReturn, growthModelType, customParams, linearNewCopiersPerPartner } = inputs;
         const isCrypto = market === 'crypto';
         const profitShare = 0.12;
         const botsPerPartner = 40;
         const partnerCount = isCrypto ? 15 : 20;
-        const capitalPerBot = 1000;
 
         const botServerCostPerBot = 110 / 90;
         const ipCostPerBot = 2;
@@ -776,8 +778,7 @@
         
         let monthlyResults = [];
         let totalCopiers = 0;
-        let quantixInternalAUM = 0; 
-        const investmentStartMonth = isCrypto ? 4 : 16;
+        const copierStartMonth = isCrypto ? 4 : 16;
 
         for (let m = 1; m <= 60; m++) {
             const activePartners = partners.filter(p => p.startMonth <= m).length;
@@ -785,8 +786,8 @@
             const companyYear = Math.ceil(m/12);
             const yearGrowth = customParams.growthModel[companyYear] || { growth: 0, churn: 0 };
 
-            if (m >= investmentStartMonth) {
-                if (m === investmentStartMonth) {
+            if (m >= copierStartMonth) {
+                if (m === copierStartMonth) {
                     totalCopiers = 50;
                 } else {
                     const prevCopiers = totalCopiers;
@@ -804,24 +805,9 @@
             const totalActiveBots = activePartners * botsPerPartner;
             const botHostingCost = totalActiveBots * totalCostPerBotMonthly;
             
-            let quantixRevenueFromAUM = 0;
-            if (isCrypto) {
-                quantixInternalAUM = totalActiveBots * capitalPerBot;
-                quantixRevenueFromAUM = quantixInternalAUM * monthlyReturn;
-            } else {
-                 if (m === investmentStartMonth) {
-                    quantixInternalAUM = initialQuantixInvestment;
-                }
-                if (quantixInternalAUM > 0) {
-                    quantixRevenueFromAUM = quantixInternalAUM * monthlyReturn;
-                    quantixInternalAUM += quantixRevenueFromAUM;
-                }
-            }
-
             const revenueCopiers = totalActiveBots > 0 ? (totalCopiers * ((maturePartners * botsPerPartner) / totalActiveBots)) : 0;
             const copierGrossRevenue = revenueCopiers * aumPerUser * monthlyReturn * profitShare;
             
-            const totalGrossRevenue = copierGrossRevenue + quantixRevenueFromAUM;
             let monthlyMarketingCost = (marketingCosts[companyYear] || 0) / 12;
             const totalMonthlyCost = monthlyMarketingCost + botHostingCost;
 
@@ -831,11 +817,9 @@
                 totalCopiers,
                 copierAUM: totalCopiers * aumPerUser,
                 copierRevenue: copierGrossRevenue,
-                quantixAUM: quantixInternalAUM,
-                quantixRevenue: quantixRevenueFromAUM,
                 botHostingCost: botHostingCost,
-                revenue: totalGrossRevenue,
-                netProfit: totalGrossRevenue - totalMonthlyCost
+                revenue: copierGrossRevenue,
+                netProfit: copierGrossRevenue - totalMonthlyCost
             });
         }
 
@@ -844,7 +828,7 @@
             const yearData = monthlyResults.filter(r=>Math.ceil(r.month/12)===y);
             if(yearData.length > 0){
                 yearly_summary.users.push(yearData[yearData.length-1].totalCopiers);
-                yearly_summary.aum.push(yearData[yearData.length-1].copierAUM + yearData[yearData.length-1].quantixAUM);
+                yearly_summary.aum.push(yearData[yearData.length-1].copierAUM);
                 const y_revenue = yearData.reduce((acc,r)=>acc+r.revenue,0);
                 const y_total_cost = yearData.reduce((acc,r)=>acc+(r.revenue-r.netProfit),0);
                 yearly_summary.revenue.push(y_revenue);
@@ -912,7 +896,13 @@
         for (let m = 1; m <= 60; m++) {
             const yearIndex = Math.floor((m - 1) / 12);
             let licenseRevenue = 0, newProDeals = 0, newEnterpriseDeals = 0;
-            if (m > 12 && (m-1) % 12 === 0) { activePro = activePro.filter(() => Math.random() > annualChurnRate); activeEnterprise = activeEnterprise.filter(() => Math.random() > annualChurnRate); }
+            if (m > 12 && (m-1) % 12 === 0) { 
+                const proToKeep = Math.round(activePro.length * (1 - annualChurnRate));
+                activePro = activePro.slice(0, proToKeep);
+                
+                const enterpriseToKeep = Math.round(activeEnterprise.length * (1 - annualChurnRate));
+                activeEnterprise = activeEnterprise.slice(0, enterpriseToKeep);
+            }
             activePro.forEach(c => { if ((m - c.startMonth) > 0 && (m - c.startMonth) % 12 === 0) licenseRevenue += pricing.pro.license; });
             activeEnterprise.forEach(c => { if ((m - c.startMonth) > 0 && (m - c.startMonth) % 12 === 0) licenseRevenue += pricing.enterprise.license; });
             const proDealsThisYear = newDealsPerYear.pro[yearIndex];
@@ -1016,10 +1006,11 @@
     }
 
     function renderSummaryView() {
+        // Use the DEFAULTS objects to ensure the summary is always stable and reflects the baseline model
         const gtmCryptoData = calculateGTMModel(GTM_DEFAULTS_CRYPTO); 
         const gtmForexData = calculateGTMModel(GTM_DEFAULTS_FOREX);
-        const iqData = calculateIQModel(IQ_PARAMS);
-        const proData = calculateProModel(PRO_PARAMS);
+        const iqData = calculateIQModel(IQ_DEFAULTS);
+        const proData = calculateProModel(PRO_DEFAULTS);
         const peopleData = calculatePeopleAndBudgetModel(PEOPLE_DEFAULTS);
         
         const totalRevenue = Array.from({length: 5}, (_, i) => gtmCryptoData.yearly_summary.revenue[i] + gtmForexData.yearly_summary.revenue[i] + iqData.yearly.revenue[i] + proData.yearly.revenue[i]);
@@ -1027,11 +1018,32 @@
         const grossProfit = totalRevenue.map((val, i) => val - totalDirectCosts[i]);
         const yearlyNetIncome = grossProfit.map((gp, i) => gp - peopleData.yearlyTotals.totalOpEx[i]);
         
+        // **UPDATED CASH FLOW CALCULATION**
         const monthlyNetIncome = Array.from({length: 60}, (_, i) => {
             const monthlyGTMRev = gtmCryptoData.monthly[i].revenue + gtmForexData.monthly[i].revenue;
-            const monthlyGTMCost = gtmCryptoData.monthly[i].revenue - gtmCryptoData.monthly[i].netProfit + (gtmForexData.monthly[i].revenue - gtmForexData.monthly[i].netProfit);
-            return monthlyGTMRev + iqData.monthly[i].revenue + proData.monthly[i].revenue - monthlyGTMCost - iqData.monthly[i].acqCost - proData.monthly[i].serverCost - peopleData.monthlyData[i].totalOpEx;
+            const monthlyGTMCost = (gtmCryptoData.monthly[i].revenue - gtmCryptoData.monthly[i].netProfit) + (gtmForexData.monthly[i].revenue - gtmForexData.monthly[i].netProfit);
+            const monthlyIQRev = iqData.monthly[i].revenue;
+            const monthlyIQCost = iqData.monthly[i].acqCost;
+            const monthlyProRev = proData.monthly[i].revenue;
+            const monthlyProCost = proData.monthly[i].serverCost;
+            const monthlyOpEx = peopleData.monthlyData[i].totalOpEx;
+
+            let initialInvestmentCost = 0;
+            // Crypto investment in Month 4 (index 3)
+            if (i === 3) {
+                initialInvestmentCost += GTM_DEFAULTS_CRYPTO.initialQuantixInvestment;
+            }
+            // Forex investment in Month 16 (index 15)
+            if (i === 15) {
+                initialInvestmentCost += GTM_DEFAULTS_FOREX.initialQuantixInvestment;
+            }
+
+            const totalMonthlyRevenue = monthlyGTMRev + monthlyIQRev + monthlyProRev;
+            const totalMonthlyDirectCosts = monthlyGTMCost + monthlyIQCost + monthlyProCost;
+            
+            return totalMonthlyRevenue - totalMonthlyDirectCosts - monthlyOpEx - initialInvestmentCost;
         });
+
         const cumulativeNetIncome = monthlyNetIncome.reduce((acc, ni) => { acc.push((acc.length > 0 ? acc[acc.length - 1] : 0) + ni); return acc; }, []);
         
         const peakCashNeed = Math.min(0, ...cumulativeNetIncome);
@@ -1243,10 +1255,10 @@
         document.getElementById('strategy-title-summary').innerHTML = `Go-To-Market Strategy <span style="color:var(--accent-blue);">(${marketName})</span>`;
         document.getElementById('kpi-title').innerHTML = `Key Performance Indicators <span style="color:var(--accent-blue);">(${marketName})</span>`;
 
-        const { users, profit, revenue } = data.yearly_summary;
+        const { users, profit, revenue, aum } = data.yearly_summary;
         document.getElementById('kpi-copiers').textContent = formatNumber(users.length > 4 ? users[4] : 0);
         document.getElementById('kpi-profit').textContent = formatCurrency(profit.length > 4 ? profit[4] : 0, true);
-        document.getElementById('kpi-total-profit').textContent = formatCurrency(profit.reduce((a, b) => a + b, 0), true);
+        document.getElementById('kpi-aum-y5').textContent = formatCurrency(aum.length > 4 ? aum[4] : 0, true);
 
         let cumulativeProfit = 0; let breakEvenYear = 'Never';
         for (let i = 0; i < profit.length; i++) {
@@ -1304,8 +1316,6 @@
                 <td data-label="Total Copiers">${formatNumber(m.totalCopiers)}</td>
                 <td data-label="Copier AUM">${formatCurrency(m.copierAUM)}</td>
                 <td data-label="Copier Revenue" class="profit">${formatCurrency(m.copierRevenue)}</td>
-                <td data-label="Quantix AUM">${formatCurrency(m.quantixAUM)}</td>
-                <td data-label="Quantix Revenue" class="profit">${formatCurrency(m.quantixRevenue)}</td>
                 <td data-label="Bot Costs" class="loss">(${formatCurrency(m.botHostingCost)})</td>
                 <td data-label="Net Profit/Loss" class="${m.netProfit < 0 ? 'loss' : 'profit'}">${formatCurrency(m.netProfit)}</td>
             </tr>`;
@@ -1515,13 +1525,15 @@
     // --- INITIALIZATION ---
     function initGlobalState() {
         GTM_DEFAULTS_CRYPTO = { market: 'crypto', aumPerUser: 2000, monthlyReturn: 0.03, growthModelType: 's-curve', linearNewCopiersPerPartner: 330, initialQuantixInvestment: 600000, customParams: { growthModel: { 1: { growth: 0.60, churn: 0.04 }, 2: { growth: 0.25, churn: 0.03 }, 3: { growth: 0.12, churn: 0.02 }, 4: { growth: 0.07, churn: 0.02 }, 5: { growth: 0.07, churn: 0.02 } } } };
-        GTM_DEFAULTS_FOREX = { market: 'forex', aumPerUser: 1500, monthlyReturn: 0.03, growthModelType: 's-curve', linearNewCopiersPerPartner: 200, initialQuantixInvestment: 2000, customParams: { growthModel: { 1: { growth: 0.00, churn: 0.00 }, 2: { growth: 0.60, churn: 0.04 }, 3: { growth: 0.25, churn: 0.03 }, 4: { growth: 0.12, churn: 0.02 }, 5: { growth: 0.07, churn: 0.02 } } } };
+        GTM_DEFAULTS_FOREX = { market: 'forex', aumPerUser: 1500, monthlyReturn: 0.03, growthModelType: 's-curve', linearNewCopiersPerPartner: 200, initialQuantixInvestment: 800000, customParams: { growthModel: { 1: { growth: 0.00, churn: 0.00 }, 2: { growth: 0.60, churn: 0.04 }, 3: { growth: 0.25, churn: 0.03 }, 4: { growth: 0.12, churn: 0.02 }, 5: { growth: 0.07, churn: 0.02 } } } };
         IQ_DEFAULTS = { startMonth: 6, costPerFreeTrial: 15, planUptake: { annual: 0.7, monthly: 0.3 }, paidUserDist: { basic: 0.6, pro: 0.3, elite: 0.1 }, newFreeTrialsPerMonth: { 1: 700, 2: 2500, 3: 4500 }, convRate: { 1: 0.10, 2: 0.15, 3: 0.20 }, annualPaidChurn: { 1: 0.35, 2: 0.25, 3: 0.15 } };
         PRO_DEFAULTS = { annualChurnRate: 0.05, pricing: { pro: {nre: 0, license: 10000 }, enterprise: { nre: 250000, license: 120000 } }, newDealsPerYear: { pro: [2, 4, 8, 10, 12], enterprise: [1, 2, 3, 4, 5] }, affiliateParams: { adoptionRate: 0.40, avgCopiersPerAffiliate: 150, avgAumPerCopier: 1500, monthlyBotReturn: 0.03, quantixProfitShare: 0.30 }, serverCosts: { pro: 202.40, enterprise: 202.40 } };
         PEOPLE_DEFAULTS = { 
             benefitsAndTaxRate: 0.25, guaranteedSalesBonus: 2500, itPerFTE: 250, commsPerFTE: 2000,
             travelBudget: { cLevel: 10000, director: 3000, standard: 1500 },
             recruitingFeeTiers: { cLevel: 0.35, director: 0.30, standard: 0.25 },
+            hiringPlan: { 'CEO': [1,0,0,0,0], 'CFO': [1,0,0,0,0], 'COO': [1,0,0,0,0], 'C Inv. O': [0,1,0,0,0], 'CTO': [1,0,0,0,0], 'C Comp. O': [1,0,0,0,0], 'VP of Engineering': [1,0,0,0,0], 'Director of Engineering': [1,0,0,0,0], 'VP Customer Success': [0,0,1,0,0], 'VP of Sales': [1,0,0,0,0], 'Full Stack Engineer': [3,2,3,4,3], 'R&D': [1,2,1,2,0], 'Analyst': [1,1,2,2,2], 'Software Test Engineer': [1,1,2,2,0], 'Support': [2,1,2,2,3], 'Sales': [0,3,0,0,2] },
+            salaryAdjustments: { 'CEO': [-0.65,-0.50,-0.40,0.00,0.00], 'CFO': [-0.95,-0.90,-0.75,-0.25,0.00], 'COO': [-0.72,-0.60,-0.50,-0.25,0.00], 'C Inv. O': [-1.00,-1.00,-0.50,-0.25,0.00], 'CTO': [-0.45,-0.35,0.00,0.00,1.00], 'C Comp. O': [-0.75,-0.60,0.00,0.00,1.00], 'VP of Engineering': [-0.75,-0.65,-0.50,0.00,1.00], 'Director of Engineering': [-0.75,-0.65,-0.50,0.00,1.00], 'VP Customer Success': [-1.00,-1.00,-0.50,-0.30,0.00], 'VP of Sales': [-0.65,-0.60,-0.43,-0.40,-0.55], 'Full Stack Engineer': [-0.75,-0.65,-0.60,0.00,1.00], 'R&D': [-0.65,-0.55,0.00,0.00,0.20], 'Analyst': [-0.80,-0.75,0.00,0.00,1.00], 'Software Test Engineer': [-0.75,-0.75,0.00,0.00,1.00], 'Support': [-0.45,-0.45,0.00,0.00,1.00], 'Sales': [-1.00,-0.60,0.00,0.00,0.00] },
             employees: [
                 { role: 'CEO', baseSalary: 360000, doh: 1, type: 'cLevel', adjustments:[-0.65,-0.50,-0.40,0.00,0.00] },
                 { role: 'CFO', baseSalary: 250000, doh: 1, type: 'cLevel', adjustments:[-0.95,-0.90,-0.75,-0.25,0.00] },
@@ -1539,11 +1551,7 @@
                 { role: 'Software Test Engineer', baseSalary: 35000, doh: 1, type: 'standard', adjustments:[-0.75,-0.75,0.00,0.00,1.00] }, { role: 'Software Test Engineer', baseSalary: 35000, doh: 13, type: 'standard', adjustments:[-0.75,-0.75,0.00,0.00,1.00] }, { role: 'Software Test Engineer', baseSalary: 35000, doh: 25, type: 'standard', adjustments:[-0.75,-0.75,0.00,0.00,1.00] }, { role: 'Software Test Engineer', baseSalary: 35000, doh: 25, type: 'standard', adjustments:[-0.75,-0.75,0.00,0.00,1.00] }, { role: 'Software Test Engineer', baseSalary: 35000, doh: 37, type: 'standard', adjustments:[-0.75,-0.75,0.00,0.00,1.00] }, { role: 'Software Test Engineer', baseSalary: 35000, doh: 37, type: 'standard', adjustments:[-0.75,-0.75,0.00,0.00,1.00] },
                 { role: 'Support', baseSalary: 25000, doh: 1, type: 'standard', adjustments:[-0.45,-0.45,0.00,0.00,1.00] }, { role: 'Support', baseSalary: 25000, doh: 1, type: 'standard', adjustments:[-0.45,-0.45,0.00,0.00,1.00] }, { role: 'Support', baseSalary: 25000, doh: 13, type: 'standard', adjustments:[-0.45,-0.45,0.00,0.00,1.00] }, { role: 'Support', baseSalary: 25000, doh: 25, type: 'standard', adjustments:[-0.45,-0.45,0.00,0.00,1.00] }, { role: 'Support', baseSalary: 25000, doh: 25, type: 'standard', adjustments:[-0.45,-0.45,0.00,0.00,1.00] }, { role: 'Support', baseSalary: 25000, doh: 37, type: 'standard', adjustments:[-0.45,-0.45,0.00,0.00,1.00] }, { role: 'Support', baseSalary: 25000, doh: 37, type: 'standard', adjustments:[-0.45,-0.45,0.00,0.00,1.00] }, { role: 'Support', baseSalary: 25000, doh: 49, type: 'standard', adjustments:[-0.45,-0.45,0.00,0.00,1.00] }, { role: 'Support', baseSalary: 25000, doh: 49, type: 'standard', adjustments:[-0.45,-0.45,0.00,0.00,1.00] }, { role: 'Support', baseSalary: 25000, doh: 49, type: 'standard', adjustments:[-0.45,-0.45,0.00,0.00,1.00] },
                 { role: 'Sales', baseSalary: 135000, doh: 13, type: 'sales', adjustments:[-1.00,-0.60,0.00,0.00,0.00] }, { role: 'Sales', baseSalary: 135000, doh: 13, type: 'sales', adjustments:[-1.00,-0.60,0.00,0.00,0.00] }, { role: 'Sales', baseSalary: 135000, doh: 13, type: 'sales', adjustments:[-1.00,-0.60,0.00,0.00,0.00] }, { role: 'Sales', baseSalary: 135000, doh: 49, type: 'sales', adjustments:[-1.00,-0.60,0.00,0.00,0.00] }, { role: 'Sales', baseSalary: 135000, doh: 49, type: 'sales', adjustments:[-1.00,-0.60,0.00,0.00,0.00] },
-                { role: 'Marketing', baseSalary: 80000, doh: 13, type: 'standard', adjustments:[-1.00,-0.50,0.00,0.00,0.00] }, { role: 'Marketing', baseSalary: 80000, doh: 37, type: 'standard', adjustments:[-1.00,-0.50,0.00,0.00,0.00] },
             ],
-            hiringPlan: {'CEO':[1,1,1,1,1],'CFO':[1,1,1,1,1],'COO':[1,1,1,1,1],'C Inv. O':[0,1,1,1,1],'CTO':[1,1,1,1,1],'C Comp. O':[1,1,1,1,1],'VP of Engineering':[1,1,1,1,1],'Director of Engineering':[1,1,1,1,1],'Full Stack Engineer(s)':[3,5,8,12,15],'R & D':[1,3,4,6,6],'Analyst':[1,2,4,6,8],'Software Test Engineer':[1,2,4,6,6],'VP Customer Success':[0,0,1,1,1],'Support':[2,3,5,7,10],'VP of Sales':[1,1,1,1,1],'Sales':[0,3,3,3,5],'Marketing':[0,1,1,2,2]},
-            salaryAdjustments: {'CEO':[-0.65,-0.50,-0.40,0.00,0.00],'CFO':[-0.95,-0.90,-0.75,-0.25,0.00],'COO':[-0.72,-0.60,-0.50,-0.25,0.00],'C Inv. O':[-1.00,-1.00,-0.50,-0.25,0.00],'CTO':[-0.45,-0.35,0.00,0.00,1.00],'C Comp. O':[-0.75,-0.60,0.00,0.00,1.00],'VP of Engineering':[-0.75,-0.65,-0.50,0.00,1.00],'Director of Engineering':[-0.75,-0.65,-0.50,0.00,1.00],'Full Stack Engineer(s)':[-0.75,-0.65,-0.60,0.00,1.00],'R & D':[-0.65,-0.55,0.00,0.00,0.20],'Analyst':[-0.80,-0.75,0.00,0.00,1.00],'Software Test Engineer':[-0.75,-0.75,0.00,0.00,1.00],'VP Customer Success':[-1.00,-1.00,-0.50,-0.30,0.00],'Support':[-0.45,-0.45,0.00,0.00,1.00],'VP of Sales':[-0.65,-0.60,-0.43,-0.40,-0.55],'Sales':[-1.00,-0.60,0.00,0.00,0.00],'Marketing':[-0.50,-0.50,0.00,0.00,0.00]},
-            generalBudget: {'Travel':4000,'IT':250,'Comms Cost':2000},
         };
         
         GTM_PARAMS = JSON.parse(JSON.stringify(GTM_DEFAULTS_CRYPTO));
