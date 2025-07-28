@@ -263,6 +263,13 @@
                             <canvas id="quarterlyCashFlowChart"></canvas>
                         </div>
                     </div>
+                    <div class="card" style="grid-column: span 12;">
+                        <div class="slider-control" style="width:100%; max-width: 400px; margin: auto; padding: 0.5rem 1rem;">
+                            <label for="revenue-sensitivity-slider" style="margin-bottom: 1rem;">Revenue Sensitivity Analysis</label>
+                            <input type="range" id="revenue-sensitivity-slider" min="50" max="200" value="100" step="10">
+                            <span id="revenue-sensitivity-value" style="font-size: 1.25rem; min-width: 80px;">100%</span>
+                        </div>
+                    </div>
                     <div class="card kpi-dashboard-card" style="grid-column: span 12;">
                         <h3 style="text-align:center; color: var(--text-secondary); font-weight: 600;">Funding Requirements</h3>
                         <div id="funding-kpis" class="metric-group"></div>
@@ -1018,41 +1025,24 @@
         const grossProfit = totalRevenue.map((val, i) => val - totalDirectCosts[i]);
         const yearlyNetIncome = grossProfit.map((gp, i) => gp - peopleData.yearlyTotals.totalOpEx[i]);
         
-        // **UPDATED CASH FLOW CALCULATION**
-        const monthlyNetIncome = Array.from({length: 60}, (_, i) => {
-            const monthlyGTMRev = gtmCryptoData.monthly[i].revenue + gtmForexData.monthly[i].revenue;
-            const monthlyGTMCost = (gtmCryptoData.monthly[i].revenue - gtmCryptoData.monthly[i].netProfit) + (gtmForexData.monthly[i].revenue - gtmForexData.monthly[i].netProfit);
-            const monthlyIQRev = iqData.monthly[i].revenue;
-            const monthlyIQCost = iqData.monthly[i].acqCost;
-            const monthlyProRev = proData.monthly[i].revenue;
-            const monthlyProCost = proData.monthly[i].serverCost;
-            const monthlyOpEx = peopleData.monthlyData[i].totalOpEx;
-
-            let initialInvestmentCost = 0;
-            // Crypto investment in Month 4 (index 3)
-            if (i === 3) {
-                initialInvestmentCost += GTM_DEFAULTS_CRYPTO.initialQuantixInvestment;
-            }
-            // Forex investment in Month 16 (index 15)
-            if (i === 15) {
-                initialInvestmentCost += GTM_DEFAULTS_FOREX.initialQuantixInvestment;
-            }
-
-            const totalMonthlyRevenue = monthlyGTMRev + monthlyIQRev + monthlyProRev;
-            const totalMonthlyDirectCosts = monthlyGTMCost + monthlyIQCost + monthlyProCost;
-            
-            return totalMonthlyRevenue - totalMonthlyDirectCosts - monthlyOpEx - initialInvestmentCost;
-        });
-
-        const cumulativeNetIncome = monthlyNetIncome.reduce((acc, ni) => { acc.push((acc.length > 0 ? acc[acc.length - 1] : 0) + ni); return acc; }, []);
+        // Store base monthly data for sensitivity analysis
+        const baseMonthlyData = {
+            gtmRevenue: Array.from({length: 60}, (_, i) => gtmCryptoData.monthly[i].revenue + gtmForexData.monthly[i].revenue),
+            gtmCost: Array.from({length: 60}, (_, i) => (gtmCryptoData.monthly[i].revenue - gtmCryptoData.monthly[i].netProfit) + (gtmForexData.monthly[i].revenue - gtmForexData.monthly[i].netProfit)),
+            iqRevenue: Array.from({length: 60}, (_, i) => iqData.monthly[i].revenue),
+            iqCost: Array.from({length: 60}, (_, i) => iqData.monthly[i].acqCost),
+            proRevenue: Array.from({length: 60}, (_, i) => proData.monthly[i].revenue),
+            proCost: Array.from({length: 60}, (_, i) => proData.monthly[i].serverCost),
+            opEx: Array.from({length: 60}, (_, i) => peopleData.monthlyData[i].totalOpEx),
+            initialInvestments: Array.from({length: 60}, (_, i) => {
+                let cost = 0;
+                if (i === 3) cost += GTM_DEFAULTS_CRYPTO.initialQuantixInvestment;
+                if (i === 15) cost += GTM_DEFAULTS_FOREX.initialQuantixInvestment;
+                return cost;
+            })
+        };
         
-        const peakCashNeed = Math.min(0, ...cumulativeNetIncome);
-        document.getElementById('funding-kpis').innerHTML = `<div class="metric"><div class="metric-label">Peak Cumulative Cash Need</div><div class="metric-value loss">${formatCurrency(peakCashNeed)}</div></div><div class="metric"><div class="metric-label">Recommended Target (30% Buffer)</div><div class="metric-value profit">${formatCurrency(Math.abs(peakCashNeed) * 1.3)}</div></div>`;
-        
-        let quarterlyTableHTML = `<table class="data-table responsive-table" style="display:table; margin-top:0;"><thead><tr><th>Quarter End</th><th>Quarterly Net</th><th>Cumulative Position</th></tr></thead><tbody>`;
-        for (let q = 1; q <= 8; q++) { const endMonthIndex=q*3-1; const quarterlyNet=monthlyNetIncome.slice(endMonthIndex-2,endMonthIndex+1).reduce((a,b)=>a+b,0); quarterlyTableHTML += `<tr><td data-label="Quarter End">Y${Math.ceil(q/4)}-Q${q%4||4}</td><td data-label="Quarterly Net" class="${quarterlyNet<0?'loss':'profit'}">${formatCurrency(quarterlyNet)}</td><td data-label="Cumulative Position" class="${cumulativeNetIncome[endMonthIndex]<0?'loss':'profit'}">${formatCurrency(cumulativeNetIncome[endMonthIndex])}</td></tr>`; }
-        document.getElementById('quarterly-cash-flow-table').innerHTML = quarterlyTableHTML+`</tbody></table>`;
-        
+        // Render static parts of the summary view
         document.getElementById('eoy-kpi-table').innerHTML = `<table class="data-table responsive-table" style="display:table;"><thead><tr><th>Metric (End of Year)</th>${Array.from({length:5},(_,i)=>`<th>Y${i+1}</th>`).join('')}</tr></thead><tbody>
         <tr class="kpi-driver-row"><td colspan="6" style="text-align:left;" data-label="Section">Revenue Drivers</td></tr>
         <tr><td data-label="Metric">Monthly Recurring Revenue (MRR)<p class="kpi-definition">Total monthly subscription revenue from IQ platform.</p></td>${iqData.yearly.mrr.map((mrr,i)=>`<td data-label="Y${i+1}">${formatCurrency(mrr)}</td>`).join('')}</tr>
@@ -1071,15 +1061,53 @@
         const revChartData = { labels:Array.from({length:5},(_,i)=>`${START_YEAR+i}`), datasets:[{label:'Marketplace',data:gtmCryptoData.yearly_summary.revenue.map((v,i)=>v+gtmForexData.yearly_summary.revenue[i]),backgroundColor:'#0077b6'},{label:'Quantix IQ',data:iqData.yearly.revenue,backgroundColor:'#f77829'},{label:'Quantix Pro',data:proData.yearly.revenue,backgroundColor:'#3fb950'}]};
         renderChart('revenueBreakdown', 'revenueBreakdownChart', {type:'bar', data:revChartData, options:{responsive:true,maintainAspectRatio:false,plugins:{title:{display:true,text:'Revenue by Business Unit',color:'#e6edf3',font:{size:18}},legend:{position:'bottom',labels:{color:'#e6edf3'}}},scales:{x:{stacked:true,ticks:{color:'#e6edf3'},grid:{color:'#30363d'}},y:{stacked:true,ticks:{color:'#e6edf3',callback:v=>formatCurrency(v,true)},grid:{color:'#30363d'}}}}});
         
-        const quarterlyLabels=Array.from({length:20},(_,i)=>`Y${Math.floor(i/4)+1}-Q${i%4+1}`);
-        const milestoneAnnotations={
-            'crypto':{type:'line',xMin:0,xMax:0,borderColor:'rgba(88,166,255,0.7)',borderWidth:2,label:{content:'Crypto Partnerships',display:true,position:'start',backgroundColor:'rgba(88,166,255,0.7)'}},
-            'iq_launch':{type:'line',xMin:1,xMax:1,borderColor:'rgba(247,120,41,0.7)',borderWidth:2,label:{content:'IQ Launch',display:true,position:'end',backgroundColor:'rgba(247,120,41,0.7)'}},
-            'forex_partner':{type:'line',xMin:4,xMax:4,borderColor:'rgba(88,166,255,0.7)',borderWidth:2,label:{content:'Forex Partnerships',display:true,position:'start',backgroundColor:'rgba(88,166,255,0.7)'}},
-            'iq_forex':{type:'line',xMin:6,xMax:6,borderColor:'rgba(247,120,41,0.7)',borderWidth:2,label:{content:'IQ Forex Support',display:true,position:'end',backgroundColor:'rgba(247,120,41,0.7)'}}
+        // Function to update funding section based on slider
+        const updateFundingDisplay = () => {
+            const slider = document.getElementById('revenue-sensitivity-slider');
+            const revenueMultiplier = parseFloat(slider.value) / 100;
+
+            const monthlyNetIncome = Array.from({length: 60}, (_, i) => {
+                const totalMonthlyRevenue = (baseMonthlyData.gtmRevenue[i] + baseMonthlyData.iqRevenue[i] + baseMonthlyData.proRevenue[i]) * revenueMultiplier;
+                const totalMonthlyDirectCosts = baseMonthlyData.gtmCost[i] + baseMonthlyData.iqCost[i] + baseMonthlyData.proCost[i];
+                const monthlyOpEx = baseMonthlyData.opEx[i];
+                const initialInvestmentCost = baseMonthlyData.initialInvestments[i];
+                return totalMonthlyRevenue - totalMonthlyDirectCosts - monthlyOpEx - initialInvestmentCost;
+            });
+
+            const cumulativeNetIncome = monthlyNetIncome.reduce((acc, ni) => { acc.push((acc.length > 0 ? acc[acc.length - 1] : 0) + ni); return acc; }, []);
+            const peakCashNeed = Math.min(0, ...cumulativeNetIncome);
+            
+            document.getElementById('funding-kpis').innerHTML = `<div class="metric"><div class="metric-label">Peak Cumulative Cash Need</div><div class="metric-value loss">${formatCurrency(peakCashNeed)}</div></div><div class="metric"><div class="metric-label">Recommended Target (30% Buffer)</div><div class="metric-value profit">${formatCurrency(Math.abs(peakCashNeed) * 1.3)}</div></div>`;
+            
+            let quarterlyTableHTML = `<table class="data-table responsive-table" style="display:table; margin-top:0;"><thead><tr><th>Quarter End</th><th>Quarterly Net</th><th>Cumulative Position</th></tr></thead><tbody>`;
+            for (let q = 1; q <= 8; q++) { 
+                const endMonthIndex = q * 3 - 1;
+                const quarterlyNet = monthlyNetIncome.slice(endMonthIndex - 2, endMonthIndex + 1).reduce((a, b) => a + b, 0);
+                quarterlyTableHTML += `<tr><td data-label="Quarter End">Y${Math.ceil(q/4)}-Q${q%4||4}</td><td data-label="Quarterly Net" class="${quarterlyNet<0?'loss':'profit'}">${formatCurrency(quarterlyNet)}</td><td data-label="Cumulative Position" class="${cumulativeNetIncome[endMonthIndex]<0?'loss':'profit'}">${formatCurrency(cumulativeNetIncome[endMonthIndex])}</td></tr>`;
+            }
+            document.getElementById('quarterly-cash-flow-table').innerHTML = quarterlyTableHTML + `</tbody></table>`;
+
+            const quarterlyLabels=Array.from({length:20},(_,i)=>`Y${Math.floor(i/4)+1}-Q${i%4+1}`);
+            const milestoneAnnotations={
+                'crypto':{type:'line',xMin:0,xMax:0,borderColor:'rgba(88,166,255,0.7)',borderWidth:2,label:{content:'Crypto Partnerships',display:true,position:'start',backgroundColor:'rgba(88,166,255,0.7)'}},
+                'iq_launch':{type:'line',xMin:1,xMax:1,borderColor:'rgba(247,120,41,0.7)',borderWidth:2,label:{content:'IQ Launch',display:true,position:'end',backgroundColor:'rgba(247,120,41,0.7)'}},
+                'forex_partner':{type:'line',xMin:4,xMax:4,borderColor:'rgba(88,166,255,0.7)',borderWidth:2,label:{content:'Forex Partnerships',display:true,position:'start',backgroundColor:'rgba(88,166,255,0.7)'}},
+                'iq_forex':{type:'line',xMin:6,xMax:6,borderColor:'rgba(247,120,41,0.7)',borderWidth:2,label:{content:'IQ Forex Support',display:true,position:'end',backgroundColor:'rgba(247,120,41,0.7)'}}
+            };
+            const cashFlowChartData={labels:quarterlyLabels,datasets:[{label:'Quarterly Net Income',data:Array.from({length:20},(_,i)=>monthlyNetIncome.slice(i*3,i*3+3).reduce((a,b)=>a+b,0)),borderColor:'rgba(88,166,255,1)',backgroundColor:'rgba(88,166,255,0.2)',fill:true,tension:0.1}]};
+            renderChart('cashFlow','quarterlyCashFlowChart',{type:'line',data:cashFlowChartData,options:{responsive:true,maintainAspectRatio:false,plugins:{title:{display:true,text:'Quarterly Cash Flow & Milestones',color:'#e6edf3',font:{size:18}},legend:{display:false},annotation:{annotations:milestoneAnnotations}},scales:{y:{ticks:{color:'#e6edf3',callback:v=>formatCurrency(v,true)},grid:{color:'#30363d'}},x:{ticks:{color:'#e6edf3'},grid:{color:'#30363d'}}}}});
         };
-        const cashFlowChartData={labels:quarterlyLabels,datasets:[{label:'Quarterly Net Income',data:Array.from({length:20},(_,i)=>monthlyNetIncome.slice(i*3,i*3+3).reduce((a,b)=>a+b,0)),borderColor:'rgba(88,166,255,1)',backgroundColor:'rgba(88,166,255,0.2)',fill:true,tension:0.1}]};
-        renderChart('cashFlow','quarterlyCashFlowChart',{type:'line',data:cashFlowChartData,options:{responsive:true,maintainAspectRatio:false,plugins:{title:{display:true,text:'Quarterly Cash Flow & Milestones',color:'#e6edf3',font:{size:18}},legend:{display:false},annotation:{annotations:milestoneAnnotations}},scales:{y:{ticks:{color:'#e6edf3',callback:v=>formatCurrency(v,true)},grid:{color:'#30363d'}},x:{ticks:{color:'#e6edf3'},grid:{color:'#30363d'}}}}});
+
+        // Add event listeners for the new slider
+        const slider = document.getElementById('revenue-sensitivity-slider');
+        const valueSpan = document.getElementById('revenue-sensitivity-value');
+        slider.addEventListener('input', () => {
+            valueSpan.textContent = `${slider.value}%`;
+        });
+        slider.addEventListener('change', updateFundingDisplay);
+
+        // Initial call to render the funding section
+        updateFundingDisplay();
     }
 
     function renderPeopleAndBudgetView() {
@@ -1576,4 +1604,4 @@
 
     </script>
 </body>
-</html>
+</ht
