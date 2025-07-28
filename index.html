@@ -140,6 +140,61 @@
             gap: 1rem;
             grid-template-columns: 1fr; /* Default to single column */
         }
+        
+        /* Tooltip Styles */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+        }
+        .tooltip .tooltip-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: var(--text-secondary);
+            color: var(--bg-color);
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 8px;
+            user-select: none;
+        }
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 250px;
+            background-color: #2d333b;
+            color: var(--text-primary);
+            text-align: left;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -125px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.85rem;
+            font-weight: 400;
+            line-height: 1.5;
+            border: 1px solid var(--border-color);
+        }
+        .tooltip .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #2d333b transparent transparent transparent;
+        }
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
 
         @media (min-width: 576px) {
             .kpi-card { grid-column: span 6; }
@@ -264,8 +319,14 @@
                         </div>
                     </div>
                     <div class="card" style="grid-column: span 12;">
-                        <div class="slider-control" style="width:100%; max-width: 400px; margin: auto; padding: 0.5rem 1rem;">
-                            <label for="revenue-sensitivity-slider" style="margin-bottom: 1rem;">Revenue Sensitivity Analysis</label>
+                        <div class="slider-control" style="width:100%; max-width: 400px; margin: auto; padding: 1rem;">
+                             <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+                                <label for="revenue-sensitivity-slider">Revenue Sensitivity Analysis</label>
+                                <div class="tooltip">
+                                    <span class="tooltip-icon">?</span>
+                                    <span class="tooltip-text">Adjust this slider to see how your funding needs change if actual revenue is higher or lower than projected. This analysis keeps all costs fixed to isolate the impact of revenue volatility.</span>
+                                </div>
+                            </div>
                             <input type="range" id="revenue-sensitivity-slider" min="50" max="200" value="100" step="10">
                             <span id="revenue-sensitivity-value" style="font-size: 1.25rem; min-width: 80px;">100%</span>
                         </div>
@@ -296,6 +357,13 @@
                         <input type="checkbox" class="toggle-switch-checkbox" id="growth-model-toggle" data-action="update-growth-model">
                         <label class="toggle-switch-label" for="growth-model-toggle">Toggle</label>
                         <span style="font-weight:600; color:var(--text-secondary);">Linear</span>
+                         <div class="tooltip">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">
+                                <b>S-Curve:</b> Assumes exponential user growth initially, which slows down as the market matures. Best for modeling new market entry.<br><br>
+                                <b>Linear:</b> Assumes a steady, constant number of new users are acquired each month. Best for modeling mature, stable markets.
+                            </span>
+                        </div>
                     </div>
                 </div>
                 <div class="control-group" id="gtm-sliders">
@@ -643,75 +711,110 @@
             <section>
             <h2>Model Formulas & Logic</h2>
             <div class="card" style="grid-column: span 12; margin-bottom:1.5rem;">
-                <h3>Summary (Income Statement) Model</h3>
-                <p style="color:var(--text-secondary);">This model provides the highest-level financial overview by aggregating the revenues and costs from all other business units (Marketplace, IQ, Pro) and subtracting the company-wide Operating Expenses calculated in the People & Budget model. It is the final roll-up of all other models.</p>
+                <h3>Summary (Income Statement & Cash Flow) Model</h3>
+                <h4>Purpose</h4>
+                <p style="color:var(--text-secondary);">This is the master model that provides the complete financial picture of the company. It aggregates the outputs from all individual business unit models (Marketplace, IQ, Pro) and the company-wide People & Budget model to generate the final 5-year Income Statement and Cash Flow projections.</p>
+                <h4>Core Logic</h4>
+                <p style="color:var(--text-secondary);">The model operates on a monthly basis for 60 months (5 years). Each month, it performs the following calculations:</p>
                 <ul>
-                    <li><strong>Total Revenue:</strong> <code>(Marketplace Gross Revenue) + (IQ Subscription Revenue) + (Pro License & Affiliate Revenue)</code></li>
-                    <li><strong>Total Direct Costs:</strong> <code>(Marketplace Direct Costs) + (IQ Acquisition & Infrastructure Costs) + (Pro Server Costs)</code></li>
+                    <li><strong>Total Revenue:</strong> <code>(Marketplace Revenue) + (IQ Revenue) + (Pro Revenue)</code></li>
+                    <li><strong>Total Direct Costs:</strong> <code>(Marketplace Costs) + (IQ Costs) + (Pro Costs)</code></li>
                     <li><strong>Gross Profit:</strong> <code>Total Revenue - Total Direct Costs</code></li>
-                    <li><strong>Total Operating Expenses:</strong> The complete monthly cost from the People & Budget model. This includes all payroll, benefits, taxes, recruiting fees, bonuses, and general & administrative (G&A) expenses.</li>
-                    <li><strong>Net Income (Profit/Loss):</strong> <code>Gross Profit - Total Operating Expenses</code></li>
+                    <li><strong>Net Income (Pre-Investment):</strong> <code>Gross Profit - Total Operating Expenses (from People & Budget model)</code></li>
+                    <li><strong>One-Time Investments:</strong> The model subtracts the initial bot capitalization costs in the specific months they occur (<code>$600,000</code> for Crypto in Month 4, <code>$800,000</code> for Forex in Month 16).</li>
+                    <li><strong>Final Net Income:</strong> <code>Net Income (Pre-Investment) - One-Time Investments</code></li>
+                    <li><strong>Cumulative Cash Flow:</strong> <code>Previous Month's Cumulative Cash Flow + Current Month's Final Net Income</code></li>
                 </ul>
+                <h4>Outputs</h4>
+                 <p style="color:var(--text-secondary);">The primary outputs are the yearly financial tables and the funding requirement figures, which are derived from the monthly calculations.</p>
             </div>
              <div class="card" style="grid-column: span 12; margin-bottom:1.5rem;">
-                <h3>People & Budget Model</h3>
-                <p style="color:var(--text-secondary);">This is a dynamic, bottom-up model where all company-wide operating costs are calculated monthly. The primary driver is the hiring plan, which specifies when each employee (FTE) is hired. All other costs are derived from the number of active FTEs each month.</p>
+                <h3>People & Budget Model (Operating Expenses)</h3>
+                <h4>Purpose</h4>
+                <p style="color:var(--text-secondary);">This is a detailed, bottom-up model that calculates all company-wide operating expenses (OpEx). It is driven entirely by the hiring plan and pre-defined cost assumptions per employee.</p>
+                <h4>Key Inputs</h4>
                 <ul>
-                    <li><strong>Monthly Payroll:</strong> Calculated for each active employee based on their hire date (DOH). Formula: <code>(Base Salary * (1 + Salary Adjustment %)) / 12</code>. The adjustment percentage can be negative in early years to reflect ramp-up periods.</li>
-                    <li><strong>Benefits & Taxes:</strong> A flat percentage of the total monthly payroll. Formula: <code>Total Monthly Payroll * Benefits & Tax Rate (e.g., 25%)</code>.</li>
-                    <li><strong>Recruiting Fees:</strong> A one-time cost incurred in an employee's month of hire (or spread across the preceding months). It applies only to C-Level and Sales roles and is calculated as a percentage of the annual base salary. Formula: <code>Base Salary * Recruiting Fee Tier %</code>.</li>
-                    <li><strong>Guaranteed Sales Bonus:</strong> A fixed monthly bonus paid to new sales hires for their first 6 months.</li>
-                     <li><strong>General & Administrative (G&A):</strong> These are per-employee costs. The model calculates the total based on active FTEs each month. Example Formula for Travel: <code>(Annual Travel Budget per FTE / 12) * Active FTEs</code>.</li>
-                    <li><strong>Total Operating Expenses:</strong> The monthly sum of all the above: <code>Payroll + Benefits & Taxes + Recruiting Fees + Sales Bonuses + G&A Costs</code>.</li>
+                    <li><strong>Hiring Plan:</strong> The number of new hires for each role, per year.</li>
+                    <li><strong>Date of Hire (DOH):</strong> A specific month (1-60) assigned to every single employee, which triggers all associated costs.</li>
+                    <li><strong>Base Salaries & Adjustments:</strong> Annual salary for each role and yearly adjustment percentages.</li>
+                    <li><strong>Cost Rates:</strong> Percentages for Benefits & Taxes (25%) and Recruiting Fees (25-35%), and fixed amounts for bonuses and G&A items (IT, Travel, Comms).</li>
                 </ul>
+                <h4>Core Logic</h4>
+                <p style="color:var(--text-secondary);">For each month, the model identifies all "active" employees (those whose DOH is less than or equal to the current month) and calculates:</p>
+                <ul>
+                    <li><strong>Monthly Payroll:</strong> <code>(Base Salary * (1 + Adjustment %)) / 12</code> for each active employee.</li>
+                    <li><strong>Benefits & Taxes:</strong> <code>Total Monthly Payroll * 25%</code>.</li>
+                    <li><strong>Recruiting Fees:</strong> A one-time cost triggered in the month of hire (or preceding months for C-Levels), calculated as <code>Base Salary * Fee %</code>.</li>
+                    <li><strong>Guaranteed Sales Bonus:</strong> A fixed monthly bonus paid only to new sales hires for their first 6 months of employment.</li>
+                    <li><strong>G&A Costs:</strong> Per-employee costs for Travel, IT, and Comms are calculated based on the total number of active FTEs for that month.</li>
+                </ul>
+                <h4>Outputs</h4>
+                <p style="color:var(--text-secondary);">The model's final output is the **Total Monthly Operating Expense**, which is fed directly into the Summary model.</p>
             </div>
             <div class="card" style="grid-column: span 12; margin-bottom:1.5rem;">
                 <h3>Marketplace Model (Crypto / Forex)</h3>
-                <p style="color: var(--text-secondary);">This model projects revenue and costs from deploying trading bots on third-party partner platforms (e.g., Crypto exchanges, Forex brokers). The core driver is the number of "copiers" — users on those platforms who copy our bot strategies.</p>
+                <h4>Purpose</h4>
+                <p style="color: var(--text-secondary);">This model projects revenue and direct costs from deploying trading bots on third-party partner platforms (e.g., Crypto exchanges, Forex brokers). It simulates user adoption and the resulting profit-sharing revenue.</p>
+                <h4>Key Inputs</h4>
+                 <ul>
+                    <li><strong>Market Selection:</strong> Crypto or Forex, which determines the launch timeline and partner count.</li>
+                    <li><strong>Avg. AUM per Copier & Monthly Bot Return %:</strong> Key drivers for revenue calculation.</li>
+                    <li><strong>Growth Model (S-Curve vs. Linear):</strong> Determines the rate of new user acquisition.</li>
+                </ul>
+                <h4>Core Logic</h4>
                 <ul>
-                    <li><strong>User Growth (Copiers):</strong> Can be modeled in two ways:
+                    <li><strong>Partner Rollout:</strong> The model phases in new exchange/broker partners quarterly, with a 3-month "incubation period" before they start generating revenue.</li>
+                    <li><strong>User Growth (Copiers):</strong>
                         <ul>
-                           <li><strong>S-Curve:</strong> Assumes exponential growth in early stages that slows down as the market matures. Formula: <code>New Copiers = Previous Month's Copiers * (1 + MoM Growth % - MoM Churn %)</code>.</li>
-                           <li><strong>Linear:</strong> Assumes a steady number of new copiers per partner each month. Formula: <code>New Copiers = # of Mature Partners * New Copiers per Partner per Month</code>.</li>
+                           <li><strong>S-Curve:</strong> <code>New Copiers = Previous Month's Copiers * (1 + MoM Growth % - MoM Churn %)</code>. Simulates rapid early adoption that tapers off.</li>
+                           <li><strong>Linear:</strong> <code>New Copiers = # of Mature Partners * New Copiers per Partner per Month</code>. Simulates steady, predictable growth.</li>
                         </ul>
                     </li>
-                    <li><strong>Revenue AUM:</strong> The total assets under management that generate revenue. This is based on the number of copiers on partner platforms that have passed their 3-month incubation period.</li>
+                    <li><strong>Revenue AUM:</strong> The total assets under management from copiers on "mature" platforms (past the 3-month incubation).</li>
                     <li><strong>Gross Revenue:</strong> <code>Revenue AUM * Monthly Bot Return % * Quantix Profit Share % (12%)</code></li>
-                    <li><strong>Direct Costs:</strong> Includes annual marketing budget and a one-time investment cost for deploying bots to a new partner platform. Formula: <code>(Annual Marketing / 12) + (Total Bot Investment / 12)</code> (spread over the year of deployment).</li>
+                    <li><strong>Direct Costs:</strong> Calculated monthly, this includes bot hosting/IP costs (scaling with the number of active bots) and a fixed monthly marketing budget.</li>
                 </ul>
+                 <h4>Outputs</h4>
+                <p style="color:var(--text-secondary);">This model outputs the **Total Monthly Revenue** and **Total Monthly Direct Costs** for the Marketplace business unit.</p>
             </div>
             <div class="card" style="grid-column: span 12; margin-bottom:1.5rem;">
                 <h3>IQ Model (Freemium SaaS)</h3>
-                <p style="color: var(--text-secondary);">This model simulates a standard freemium Software-as-a-Service (SaaS) funnel for our Quantix IQ platform. It models the flow of users from free trials to paid subscriptions and calculates associated revenue and costs.</p>
-                 <ul>
-                    <li><strong>User Funnel:</strong>
-                        <ul>
-                            <li><strong>New Paid Users (Conversions):</strong> <code>(Free Users from Previous Month) * (Free-to-Paid Conversion Rate %)</code></li>
-                            <li><strong>Total Paid MAU (Monthly Active Users):</strong> <code>(Previous Month's Paid Users * (1 - Monthly Churn %)) + New Paid Users</code></li>
-                        </ul>
-                    </li>
-                    <li><strong>Subscription Revenue:</strong> Calculated based on the mix of users on Basic, Pro, and Elite plans, and whether they choose monthly or annual billing. Annual subscriptions provide upfront cash but are recognized as 1/12 of the revenue each month (MRR).</li>
-                    <li><strong>Direct Costs:</strong>
-                        <ul>
-                            <li><strong>Acquisition Cost:</strong> The cost to acquire a new free trial user. Formula: <code>New Free Trials * Cost per Free Trial User</code>.</li>
-                            <li><strong>Infrastructure Costs:</strong> Server, storage, and bot costs that scale with the number and type of active users (Free, Basic, Pro, Elite).</li>
-                        </ul>
-                    </li>
+                <h4>Purpose</h4>
+                <p style="color: var(--text-secondary);">This model simulates a classic freemium Software-as-a-Service (SaaS) user funnel for the Quantix IQ platform. It projects subscription revenue and the direct costs associated with acquiring and serving users.</p>
+                <h4>Key Inputs</h4>
+                <ul>
+                    <li><strong>New Free Trials per Month:</strong> The top of the user acquisition funnel.</li>
+                    <li><strong>Free-to-Paid Conversion Rate (%):</strong> The percentage of trial users who become paying customers.</li>
+                    <li><strong>Annual Paid Churn Rate (%):</strong> The percentage of paying customers who cancel their subscriptions each year.</li>
+                    <li><strong>Cost per Free Trial User ($):</strong> The direct marketing cost to acquire one trial user.</li>
                 </ul>
+                <h4>Core Logic</h4>
+                <ul>
+                    <li><strong>User Funnel:</strong> The model tracks the flow of users month-by-month: New Trials -> Active Free Users -> Conversions -> Active Paid Users, factoring in churn at each step.</li>
+                    <li><strong>Subscription Revenue:</strong> Revenue is calculated based on the number of paid users in each tier (Basic, Pro, Elite) and their billing choice (monthly vs. annual). Annual plans provide a large upfront cash injection.</li>
+                    <li><strong>Direct Costs:</strong> The primary cost is for user acquisition (<code>New Free Trials * Cost per Trial</code>). Infrastructure costs are considered negligible at this level and are bundled into G&A.</li>
+                </ul>
+                <h4>Outputs</h4>
+                <p style="color:var(--text-secondary);">This model outputs the **Total Monthly Subscription Revenue** and **Total Monthly Acquisition Costs** for the IQ business unit.</p>
             </div>
              <div class="card" style="grid-column: span 12; margin-bottom:1.5rem;">
                 <h3>Pro Model (Institutional B2B)</h3>
-                <p style="color: var(--text-secondary);">This is a direct sales model for our high-value institutional products. It's based on closing a set number of large contracts per year, plus revenue from a related affiliate program.</p>
+                <h4>Purpose</h4>
+                <p style="color: var(--text-secondary);">This is a direct sales model for our high-value institutional products (Pro and Enterprise). It's based on closing a set number of large contracts per year, plus revenue from a related affiliate program.</p>
+                <h4>Key Inputs</h4>
                 <ul>
-                    <li><strong>License Revenue:</strong> Generated from two fees: a one-time Non-Recurring Engineering (NRE) fee for setup and a recurring Annual License Fee.</li>
-                    <li><strong>Affiliate Revenue:</strong> A profit-sharing model where Pro clients can run their own bots on our infrastructure and share the profits with us. Formula: <code>(# Affiliates) * (Copiers/Affiliate) * (AUM/Copier) * (Monthly Return %) * (Quantix Profit Share %)</code></li>
-                    <li><strong>Direct Costs:</strong> These are primarily server costs.
-                        <ul>
-                            <li><strong>Client Server Costs:</strong> A fixed monthly hosting fee for each active Pro and Enterprise client.</li>
-                            <li><strong>Affiliate Bot Server Costs:</strong> A dynamic cost based on the number of bots run by affiliates. Formula: <code>(Total Affiliate Bots / 90) * $110</code>.</li>
-                        </ul>
-                    </li>
+                    <li><strong>New Contracts Per Year:</strong> The projected number of new Pro and Enterprise deals closed each year.</li>
+                    <li><strong>Pricing:</strong> The one-time NRE and recurring Annual License fees for each tier.</li>
+                    <li><strong>Affiliate Program Assumptions:</strong> Adoption rate, AUM per copier, and Quantix's profit share percentage.</li>
                 </ul>
+                <h4>Core Logic</h4>
+                <ul>
+                    <li><strong>License Revenue:</strong> The model adds revenue from new contracts (NRE + first year's license) and recurring revenue from existing contracts' annual renewals.</li>
+                    <li><strong>Affiliate Revenue:</strong> A performance-based calculation: <code>(# Affiliates) * (Copiers/Affiliate) * (AUM/Copier) * (Monthly Return %) * (Quantix Profit Share %)</code>.</li>
+                    <li><strong>Direct Costs:</strong> These are primarily server costs, calculated as a fixed monthly fee for each active Pro/Enterprise client, plus a scaled cost for the bots run by affiliates.</li>
+                </ul>
+                <h4>Outputs</h4>
+                <p style="color:var(--text-secondary);">This model outputs the **Total Monthly Revenue** (License + Affiliate) and **Total Monthly Server Costs** for the Pro business unit.</p>
             </div>
             </section>
         </div>
@@ -720,8 +823,8 @@
     <script>
     /**
      * @file Manages the Quantix Interactive Financial Dashboard.
-     * @version 24.0
-     * @description This version updates the funding calculation to include initial capital investments and refactors a Marketplace KPI.
+     * @version 24.1
+     * @description This version adds tooltips and a comprehensive Model Formulas section.
      */
     
     // --- GLOBAL STATE AND CONFIGURATION ---
@@ -979,15 +1082,12 @@
                 if (emp.role === 'Sales' && m < emp.doh - 1 + 6) {
                     monthlyData[m].salesBonuses += params.guaranteedSalesBonus;
                 }
-
-                if (emp.type === 'cLevel') monthlyData[m].travel += params.travelBudget.cLevel / 12;
-                else if (emp.type === 'director') monthlyData[m].travel += params.travelBudget.director / 12;
-                else monthlyData[m].travel += params.travelBudget.standard / 12;
             }
         });
 
         monthlyData.forEach(month => {
             month.benefitsTaxes = month.payroll * params.benefitsAndTaxRate;
+            month.travel = month.activeFTE * (params.travelPerFTE / 12);
             month.it = month.activeFTE * (params.itPerFTE / 12);
             month.comms = month.activeFTE * (params.commsPerFTE / 12);
             month.totalOpEx = month.payroll + month.benefitsTaxes + month.recruitingFees + month.salesBonuses + month.travel + month.it + month.comms;
@@ -1131,8 +1231,10 @@
         for (const role in PEOPLE_DEFAULTS.salaryAdjustments) { adjustmentHTML += `<tr><td data-label="Position">${role}</td>${PEOPLE_DEFAULTS.salaryAdjustments[role].map((adj,i) => `<td data-label="Year ${i+1} Adj." class="${adj > 0 ? 'profit' : adj < 0 ? 'loss' : ''}">${(adj * 100).toFixed(0)}%</td>`).join('')}</tr>`; }
         document.getElementById('salary-adjustment-table').innerHTML = adjustmentHTML + `</tbody>`;
         
-        let budgetHTML = `<thead><tr><th>Cost Centre</th><th>Annual</th></tr></thead><tbody>`;
-        for (const item in PEOPLE_DEFAULTS.generalBudget) { budgetHTML += `<tr><td data-label="Cost Centre">${item.replace(/([A-Z])/g, ' $1').trim()}</td><td data-label="Annual">${PEOPLE_DEFAULTS.generalBudget[item] === 'Tiered' ? 'Tiered' : formatCurrency(PEOPLE_DEFAULTS.generalBudget[item])}</td></tr>`; }
+        let budgetHTML = `<thead><tr><th>Cost Centre</th><th>Annual Per FTE</th></tr></thead><tbody>`;
+        for (const item in PEOPLE_DEFAULTS.generalBudget) {
+            budgetHTML += `<tr><td data-label="Cost Centre">${item}</td><td data-label="Annual Per FTE">${formatCurrency(PEOPLE_DEFAULTS.generalBudget[item])}</td></tr>`;
+        }
         document.getElementById('general-budget-table').innerHTML = budgetHTML + `</tbody>`;
 
         let opexDetailsHTML = `<thead><tr><th>Month</th><th>FTE</th><th>Payroll</th><th>Benefits & Taxes</th><th>Recruiting Fees</th><th>Sales Bonuses</th><th>Travel</th><th>IT & Comms</th><th>Total OpEx</th></tr></thead><tbody>`;
@@ -1557,8 +1659,16 @@
         IQ_DEFAULTS = { startMonth: 6, costPerFreeTrial: 15, planUptake: { annual: 0.7, monthly: 0.3 }, paidUserDist: { basic: 0.6, pro: 0.3, elite: 0.1 }, newFreeTrialsPerMonth: { 1: 700, 2: 2500, 3: 4500 }, convRate: { 1: 0.10, 2: 0.15, 3: 0.20 }, annualPaidChurn: { 1: 0.35, 2: 0.25, 3: 0.15 } };
         PRO_DEFAULTS = { annualChurnRate: 0.05, pricing: { pro: {nre: 0, license: 10000 }, enterprise: { nre: 250000, license: 120000 } }, newDealsPerYear: { pro: [2, 4, 8, 10, 12], enterprise: [1, 2, 3, 4, 5] }, affiliateParams: { adoptionRate: 0.40, avgCopiersPerAffiliate: 150, avgAumPerCopier: 1500, monthlyBotReturn: 0.03, quantixProfitShare: 0.30 }, serverCosts: { pro: 202.40, enterprise: 202.40 } };
         PEOPLE_DEFAULTS = { 
-            benefitsAndTaxRate: 0.25, guaranteedSalesBonus: 2500, itPerFTE: 250, commsPerFTE: 2000,
-            travelBudget: { cLevel: 10000, director: 3000, standard: 1500 },
+            benefitsAndTaxRate: 0.25,
+            guaranteedSalesBonus: 2500,
+            travelPerFTE: 4000,
+            itPerFTE: 250,
+            commsPerFTE: 2000,
+            generalBudget: {
+                'Travel Per FTE': 4000,
+                'IT Per FTE': 250,
+                'Comms Per FTE': 2000
+            },
             recruitingFeeTiers: { cLevel: 0.35, director: 0.30, standard: 0.25 },
             hiringPlan: { 'CEO': [1,0,0,0,0], 'CFO': [1,0,0,0,0], 'COO': [1,0,0,0,0], 'C Inv. O': [0,1,0,0,0], 'CTO': [1,0,0,0,0], 'C Comp. O': [1,0,0,0,0], 'VP of Engineering': [1,0,0,0,0], 'Director of Engineering': [1,0,0,0,0], 'VP Customer Success': [0,0,1,0,0], 'VP of Sales': [1,0,0,0,0], 'Full Stack Engineer': [3,2,3,4,3], 'R&D': [1,2,1,2,0], 'Analyst': [1,1,2,2,2], 'Software Test Engineer': [1,1,2,2,0], 'Support': [2,1,2,2,3], 'Sales': [0,3,0,0,2] },
             salaryAdjustments: { 'CEO': [-0.65,-0.50,-0.40,0.00,0.00], 'CFO': [-0.95,-0.90,-0.75,-0.25,0.00], 'COO': [-0.72,-0.60,-0.50,-0.25,0.00], 'C Inv. O': [-1.00,-1.00,-0.50,-0.25,0.00], 'CTO': [-0.45,-0.35,0.00,0.00,1.00], 'C Comp. O': [-0.75,-0.60,0.00,0.00,1.00], 'VP of Engineering': [-0.75,-0.65,-0.50,0.00,1.00], 'Director of Engineering': [-0.75,-0.65,-0.50,0.00,1.00], 'VP Customer Success': [-1.00,-1.00,-0.50,-0.30,0.00], 'VP of Sales': [-0.65,-0.60,-0.43,-0.40,-0.55], 'Full Stack Engineer': [-0.75,-0.65,-0.60,0.00,1.00], 'R&D': [-0.65,-0.55,0.00,0.00,0.20], 'Analyst': [-0.80,-0.75,0.00,0.00,1.00], 'Software Test Engineer': [-0.75,-0.75,0.00,0.00,1.00], 'Support': [-0.45,-0.45,0.00,0.00,1.00], 'Sales': [-1.00,-0.60,0.00,0.00,0.00] },
@@ -1604,4 +1714,4 @@
 
     </script>
 </body>
-</ht
+</html>
